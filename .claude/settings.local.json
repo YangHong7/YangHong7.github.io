@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx hexo:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:4001/)",
+      "Bash(curl -sI \"https://music.163.com/outchain/player?type=2&id=1842025991&auto=1&height=66\")"
+    ]
+  }
+}

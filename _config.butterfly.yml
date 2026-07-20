@@ -1,0 +1,228 @@
+# Butterfly 主题配置 — 仿 Fluid 风格
+
+# ========== 导航 ==========
+nav:
+  logo:
+  display_title: true
+  display_post_title: true
+  fixed: true
+
+menu:
+  首页: / || fas fa-home
+  归档: /archives/ || fas fa-archive
+  分类: /categories/ || fas fa-folder-open
+  标签: /tags/ || fas fa-tags
+  关于: /about/ || fas fa-heart
+
+# ========== 社交 ==========
+social:
+  fab fa-github: https://github.com/yanghong7 || Github
+  fas fa-envelope: mailto:241180055@smail.nju.edu.cn || Email
+  fas fa-music: https://music.163.com/#/user/home?id=YOUR_ID || 网易云音乐
+
+# ========== 头像 ==========
+avatar:
+  img: /img/avatar.png
+  effect: false
+
+# ========== 顶部图 ==========
+disable_top_img: true
+default_top_img:
+index_img: false
+archive_img: false
+# 去除所有页面的顶部图
+top_img: false
+
+# ========== 副标题（打字效果可以不要，保持干净）==========
+subtitle:
+  enable: false
+
+# ========== 首页文章列表布局 ==========
+index_layout: 4
+index_post_content:
+  method: 2
+  length: 300
+
+# ========== 代码块 ==========
+code_blocks:
+  theme: light
+  macStyle: false
+  copy: true
+  language: true
+  shrink: false
+
+# ========== 文章 ==========
+toc:
+  post: true
+  page: false
+  number: true
+  expand: false
+  style_simple: true
+
+post_copyright:
+  enable: false
+
+post_meta:
+  page:
+    date_type: created
+    date_format: date
+    categories: true
+    tags: false
+  post:
+    position: left
+    date_type: created
+    date_format: date
+    categories: true
+    tags: true
+
+# ========== 侧边栏（左栏）==========
+aside:
+  enable: true
+  hide: false
+  button: false
+  mobile: true
+  position: left
+  display:
+    archive: true
+    tag: true
+    category: true
+  card_author:
+    enable: true
+    description: 嵌入式 学习笔记 & 项目
+    button:
+      enable: false
+      icon: fab fa-github
+      text: GitHub
+      link: https://github.com/yanghong7
+  card_announcement:
+    enable: false
+  card_recent_post:
+    enable: true
+    limit: 2
+  card_categories:
+    enable: true
+    limit: 8
+    expand: true
+  card_tags:
+    enable: false
+  card_archives:
+    enable: true
+    type: monthly
+    format: MMMM YYYY
+    order: -1
+    limit: 8
+  card_webinfo:
+    enable: false
+
+# ========== 页脚 ==========
+footer:
+  owner:
+    enable: true
+    since: 2025
+  copyright:
+    enable: true
+    version: true
+  custom_text:
+
+# ========== 暗色模式 ==========
+darkmode:
+  enable: true
+  button: true
+  autoChangeMode: 1
+
+# ========== 搜索 ==========
+search:
+  use: local_search
+  placeholder: 搜索...
+  local_search:
+    preload: true
+    top_n_per_article: 1
+
+# ========== 都关掉 — 不要花哨特效 ==========
+preloader:
+  enable: false
+enter_transitions: false
+canvas_ribbon:
+  enable: false
+canvas_fluttering_ribbon:
+  enable: false
+canvas_nest:
+  enable: false
+fireworks:
+  enable: false
+click_heart:
+  enable: false
+clickShowText:
+  enable: false
+activate_power_mode:
+  enable: false
+beautify:
+  enable: false
+
+# ========== 背景色 ==========
+background: '#eee'
+
+# ========== 文章封面 ==========
+cover:
+  index_enable: false
+  aside_enable: false
+  archives_enable: false
+
+# ========== 评论（先关掉）==========
+comments:
+  use:
+  lazyload: false
+  count: false
+
+# ========== 文章分页 ==========
+post_pagination: false
+related_post:
+  enable: false
+
+# ========== 全局样式 ==========
+theme_color:
+  enable: true
+  main: '#2f4154'
+  paginator: '#2f4154'
+  button_hover: '#30a9de'
+  link_color: '#0366d6'
+
+font:
+  global_font_size: 16px
+  code_font_size: 14px
+
+# ========== 自定义 CSS 注入 ==========
+inject:
+  head:
+    - <link rel="stylesheet" href="/css/fluid-style.css?v=3">
+  bottom:
+    - <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var desc = document.querySelector('.author-info__description');
+        if (desc) {
+          var extra = document.createElement('div');
+          extra.className = 'author-info__extra';
+          extra.innerHTML = '<div style="margin-top:1rem;font-size:0.9rem;color:var(--text-color);line-height:1.8;">' +
+            '<div style="font-style:italic;margin-bottom:0.5rem;">✎ 保持好奇，保持简单</div>' +
+            '<div style="margin-bottom:0.75rem;padding:0.4rem 0.6rem;border-left:3px solid var(--post-link-color);background:var(--link-hover-bg-color);border-radius:0.25rem;font-size:0.85rem;color:var(--text-color);">📝 个性签名：在这里写下你的签名</div>' +
+            '<div style="font-size:0.85rem;color:var(--sec-text-color);">🏫 NJU · 嵌入式</div>' +
+            '<div style="font-size:0.85rem;color:var(--sec-text-color);margin-bottom:0.75rem;">✉ 241180055@smail.nju.edu.cn</div>' +
+            '<div style="margin-bottom:0.5rem;"><button id="music-btn" style="background:var(--post-link-color);color:#fff;border:none;border-radius:0.25rem;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.85rem;width:100%;text-align:center;">▶ 播放音乐</button></div>' +
+            '<div id="music-wrapper" style="display:none;margin-bottom:0.25rem;"><iframe id="music-player" frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height=66 src="https://music.163.com/outchain/player?type=2&id=1842025991&auto=1&height=66"></iframe></div>' +
+            '</div>';
+          desc.after(extra);
+
+          /* 音乐播放器 — 点击切换显隐 */
+          document.getElementById('music-btn').addEventListener('click', function() {
+            var wrapper = document.getElementById('music-wrapper');
+            if (wrapper.style.display === 'none') {
+              wrapper.style.display = 'block';
+              this.textContent = '⏸ 收起';
+            } else {
+              wrapper.style.display = 'none';
+              this.textContent = '▶ 播放音乐';
+            }
+          });
+        }
+      });
+      </script>

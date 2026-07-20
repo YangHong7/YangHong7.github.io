@@ -1,16 +1,16 @@
 ---
-  title: FIFO笔记
-  date: 2026-07-20
-  tags:
-    - FIFO
-    - 存储器设计
-    - 数字IC
-  categories:
-    - 数字IC
+title: FIFO笔记
+date: 2026-07-20
+tags:
+  - FIFO
+  - 存储器设计
+  - 数字IC
+categories:
+  - 数字IC
 ---
 
 
-==同步FIFO的设计和仿真==
+#### 同步FIFO的设计和仿真
 
 使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count =0时FIFO为空，但count =DEPTH 时FIFO写满。
 
@@ -20,13 +20,13 @@ full和empty可以采用组合逻辑判断输出，此时读写和指针移动�
 
 考虑RAM读写冲突的可能性，读和写在同一地址的情况只有两种，满和空时同时读写。我写的代码时保守型的FIFO，在以上两种情况下对操作的处理分别是只读不写、只写不读，对数据起到充分缓冲。
 
-![[Pasted image 20260720163126.png|586]]
+<img src="/img/posts/Pasted%20image%2020260720163126.png" width="586"/>
 
 
 
-![[Pasted image 20260720161633.png|679]]
+<img src="/img/posts/Pasted%20image%2020260720161633.png" width="679"/>
 
-![[Pasted image 20260720161707.png|688]]
+<img src="/img/posts/Pasted%20image%2020260720161707.png" width="688"/>
 
 
 
@@ -51,11 +51,11 @@ count_next = count + wr_fire - rd_fire;
 
 FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增加2
 
-![[Pasted image 20260720120551.png|697]]
+<img src="/img/posts/Pasted%20image%2020260720120551.png" width="697"/>
 
 
-==异步FIFO的设计和仿真==
+#### 异步FIFO的设计和仿真
 
-![[Pasted image 20260720161818.png|671]]
+<img src="/img/posts/Pasted%20image%2020260720161818.png" width="671"/>
 
-![[Pasted image 20260720161916.png|684]]
+<img src="/img/posts/Pasted%20image%2020260720161916.png" width="684"/>

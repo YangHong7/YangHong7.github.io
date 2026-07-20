@@ -1,4 +1,4 @@
-  ---
+---
   title: FIFO笔记
   date: 2026-07-20
   tags:
@@ -7,7 +7,6 @@
     - 数字IC
   categories:
     - 数字IC
-
 ---
 
 

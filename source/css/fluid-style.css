@@ -88,10 +88,12 @@ body {
 /* ===== 首页/归档/标签/分类：双栏居中布局 ===== */
 .layout:not(:has(#post)) {
   margin-top: 1.5rem !important;
-  max-width: 1280px !important;
+  max-width: 1600px !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  gap: 4.5rem !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  gap: 2.5rem !important;
 }
 
 /* ===== 文章页：纯文章居中，隐藏侧栏和目录 ===== */
@@ -109,7 +111,7 @@ body {
 }
 
 /* ===== 白色卡片（board）= Fluid #board ===== */
-.recent-posts,
+/* 首页文章列表容器 .recent-posts 去掉大白框；文章页/归档/标签/分类保留 */
 #post,
 .page,
 #archive,
@@ -122,20 +124,30 @@ body {
   border: none !important;
   align-self: flex-start !important;
 }
-
-/* ===== 首页文章列表 ===== */
-.recent-post-item {
+.recent-posts {
   background: transparent !important;
-  border-radius: 0 !important;
   box-shadow: none !important;
-  margin-bottom: 2.5rem !important;
-  padding: 0 0 1.5rem !important;
-  border-bottom: 1px solid var(--line-color) !important;
+  border: none !important;
+  padding: 0 !important;
+  align-self: flex-start !important;
+}
+
+/* ===== 首页文章列表 — 每篇独立悬浮卡片 ===== */
+.recent-post-item {
+  background: var(--board-bg-color) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.08), 0 2px 4px 0 rgba(0,0,0,0.06) !important;
+  margin-bottom: 1.25rem !important;
+  padding: 1.25rem 1.5rem !important;
+  border: none !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+.recent-post-item:hover {
+  box-shadow: 0 8px 20px 0 rgba(0,0,0,0.12), 0 4px 8px 0 rgba(0,0,0,0.08) !important;
+  transform: translateY(-2px) !important;
 }
 .recent-post-item:last-child {
-  border-bottom: none !important;
   margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
 }
 .recent-post-item .article-title {
   font-size: 1.5rem !important;
@@ -151,15 +163,7 @@ body {
   color: var(--link-hover-color) !important;
 }
 .recent-post-item .content {
-  color: var(--sec-text-color) !important;
-  font-size: 0.95rem !important;
-  line-height: 1.6 !important;
-  margin: 0.5rem 0 !important;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-  max-height: calc(1.4rem * 3);
+  display: none !important;
 }
 .recent-post-item .post-meta-date {
   color: var(--sec-text-color) !important;
@@ -253,19 +257,26 @@ body {
 /* ===== 侧边栏（仅首页/归档等页面显示） ===== */
 .aside-content {
   padding-left: 0 !important;
-  width: 390px !important;
-  min-width: 390px !important;
+  width: 320px !important;
+  min-width: 320px !important;
+  position: sticky !important;
+  top: 5rem !important;
+  align-self: flex-start !important;
+  max-height: calc(100vh - 6rem) !important;
+  overflow-y: auto !important;
 }
 .layout:not(:has(#post)) > div:first-child {
   width: auto !important;
   flex: 1 !important;
+  min-width: 0 !important;
 }
 
 .aside-content .card-widget {
   background: var(--board-bg-color) !important;
   border-radius: 0.5rem !important;
-  box-shadow: 0 12px 15px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19) !important;
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.08), 0 2px 4px 0 rgba(0,0,0,0.06) !important;
   border: none !important;
+  margin-bottom: 1.25rem !important;
 }
 .aside-content .card-widget .item-headline {
   color: var(--text-color) !important;

@@ -18,7 +18,7 @@ menu:
 social:
   fab fa-github: https://github.com/yanghong7 || Github
   fas fa-envelope: mailto:241180055@smail.nju.edu.cn || Email
-  fas fa-music: https://music.163.com/#/user/home?id=YOUR_ID || 网易云音乐
+  fas fa-music: https://music.163.com/#/user/home?id=7832095894 || 网易云音乐
 
 # ========== 头像 ==========
 avatar:
@@ -88,7 +88,7 @@ aside:
     category: true
   card_author:
     enable: true
-    description: 嵌入式 学习笔记 & 项目
+    description: 数字IC 项目&笔记
     button:
       enable: false
       icon: fab fa-github
@@ -194,7 +194,9 @@ font:
 # ========== 自定义 CSS 注入 ==========
 inject:
   head:
-    - <link rel="stylesheet" href="/css/fluid-style.css?v=3">
+    - <link rel="stylesheet" href="/css/fluid-style.css?v=4">
+    - <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    - <script>document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');});</script>
   bottom:
     - <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -203,22 +205,27 @@ inject:
           var extra = document.createElement('div');
           extra.className = 'author-info__extra';
           extra.innerHTML = '<div style="margin-top:1rem;font-size:0.9rem;color:var(--text-color);line-height:1.8;">' +
-            '<div style="font-style:italic;margin-bottom:0.5rem;">✎ 保持好奇，保持简单</div>' +
+            '<div style="font-style:italic;margin-bottom:0.5rem;">✎ Thinking will never teach you how to live.</div>' +
             '<div style="margin-bottom:0.75rem;padding:0.4rem 0.6rem;border-left:3px solid var(--post-link-color);background:var(--link-hover-bg-color);border-radius:0.25rem;font-size:0.85rem;color:var(--text-color);">📝 个性签名：在这里写下你的签名</div>' +
-            '<div style="font-size:0.85rem;color:var(--sec-text-color);">🏫 NJU · 嵌入式</div>' +
+            '<div style="font-size:0.85rem;color:var(--sec-text-color);">🏫 NJU · 数字IC</div>' +
             '<div style="font-size:0.85rem;color:var(--sec-text-color);margin-bottom:0.75rem;">✉ 241180055@smail.nju.edu.cn</div>' +
             '<div style="margin-bottom:0.5rem;"><button id="music-btn" style="background:var(--post-link-color);color:#fff;border:none;border-radius:0.25rem;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.85rem;width:100%;text-align:center;">▶ 播放音乐</button></div>' +
-            '<div id="music-wrapper" style="display:none;margin-bottom:0.25rem;"><iframe id="music-player" frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height=66 src="https://music.163.com/outchain/player?type=2&id=1842025991&auto=1&height=66"></iframe></div>' +
+            '<div id="music-wrapper" style="display:none;margin-bottom:0.25rem;"><iframe id="music-player" frameborder="no" border="0" marginwidth="0" marginheight="0" width="100%" height="86" src="about:blank"></iframe></div>' +
             '</div>';
           desc.after(extra);
 
-          /* 音乐播放器 — 点击切换显隐 */
+          /* 音乐播放器 — 点击切换显隐；首次展开时才注入 src，规避自动播放拦截 */
+          var MUSIC_SRC = "https://music.163.com/outchain/player?type=2&id=1842025991&auto=1&height=66";
           document.getElementById('music-btn').addEventListener('click', function() {
             var wrapper = document.getElementById('music-wrapper');
+            var iframe = document.getElementById('music-player');
             if (wrapper.style.display === 'none') {
+              /* 每次展开都重设 src，确保点击后 auto=1 生效 */
+              iframe.src = MUSIC_SRC;
               wrapper.style.display = 'block';
               this.textContent = '⏸ 收起';
             } else {
+              iframe.src = 'about:blank';   /* 收起时停止播放 */
               wrapper.style.display = 'none';
               this.textContent = '▶ 播放音乐';
             }

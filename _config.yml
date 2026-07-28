@@ -107,4 +107,6 @@ search:
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
-  type: ''
+  type: git
+  repo: git@github.com:YangHong7/YangHong7.github.io.git
+  branch: main

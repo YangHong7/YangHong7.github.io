@@ -11,11 +11,7 @@ git add -A
 git commit --allow-empty -m "Update $(date '+%Y-%m-%d %H:%M')"
 git push origin source
 
-echo "==> 部署 (main 分支)..."
-cd public
-git checkout main
-git add -A
-git commit --allow-empty -m "Site updated: $(date '+%Y-%m-%d %H:%M:%S')"
-git push origin main
+echo "==> 部署静态页面到 main 分支..."
+hexo deploy
 
 echo "==> 完成"

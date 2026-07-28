@@ -10,7 +10,7 @@ categories:
 ---
 
 
-#### 同步FIFO的设计和仿真
+### 同步FIFO的设计和仿真
 
 使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count =0时FIFO为空，但count =DEPTH 时FIFO写满。
 

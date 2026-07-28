@@ -1,0 +1,332 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Openlane工具链部署和使用 | yanghong</title><meta name="author" content="yanghong7"><meta name="copyright" content="yanghong7"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程 文档说明：本指南涵盖从 Windows 11 环境准备、Docker 容器搭建、开源 EDA 工具链激活，到 RTL 逻辑综合（Yosys）、静态时序分析（OpenSTA）以及数字后端布局布线（OpenLane）的完整实操流程。   目录 第一阶段：搭建 Windows + WSL2 环境 第二阶段：Ope">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Openlane工具链部署和使用">
+<meta property="og:url" content="http://example.com/2026/07/27/SOP_Openlane/index.html">
+<meta property="og:site_name" content="yanghong">
+<meta property="og:description" content="SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程 文档说明：本指南涵盖从 Windows 11 环境准备、Docker 容器搭建、开源 EDA 工具链激活，到 RTL 逻辑综合（Yosys）、静态时序分析（OpenSTA）以及数字后端布局布线（OpenLane）的完整实操流程。   目录 第一阶段：搭建 Windows + WSL2 环境 第二阶段：Ope">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/avatar.png">
+<meta property="article:published_time" content="2026-07-26T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-28T07:47:53.833Z">
+<meta property="article:author" content="yanghong7">
+<meta property="article:tag" content="Openlane">
+<meta property="article:tag" content="工具使用">
+<meta property="article:tag" content="数字IC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Openlane工具链部署和使用",
+  "url": "http://example.com/2026/07/27/SOP_Openlane/",
+  "image": "http://example.com/img/avatar.png",
+  "datePublished": "2026-07-26T16:00:00.000Z",
+  "dateModified": "2026-07-28T07:47:53.833Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "yanghong7",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2026/07/27/SOP_Openlane/index.html"><link rel="preconnect" href="//cdnjs.cloudflare.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const mediaQueryDark = window.matchMedia('(prefers-color-scheme: dark)')
+          const mediaQueryLight = window.matchMedia('(prefers-color-scheme: light)')
+
+          if (theme === undefined) {
+            if (mediaQueryLight.matches) activateLightMode()
+            else if (mediaQueryDark.matches) activateDarkMode()
+            else {
+              const hour = new Date().getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            mediaQueryDark.addEventListener('change', () => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else {
+            theme === 'light' ? activateLightMode() : activateDarkMode()
+          }
+        
+      
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdnjs.cloudflare.com/ajax/libs/egjs-infinitegrid/4.13.0/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Openlane工具链部署和使用',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/fluid-style.css?v=4"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"><script>document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-color: #eee;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img fixed" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">yanghong</span></a><a class="nav-page-title" href="/"><span class="site-name">Openlane工具链部署和使用</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Openlane工具链部署和使用</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2026-07-26T16:00:00.000Z" title="发表于 2026-07-27 00:00:00">2026-07-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%95%B0%E5%AD%97IC/">数字IC</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><hr>
+<h1 id="SOP：WSL2-Docker-搭建-OpenLane-数字芯片综合与-STA-流程"><a href="#SOP：WSL2-Docker-搭建-OpenLane-数字芯片综合与-STA-流程" class="headerlink" title="SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程"></a>SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程</h1><blockquote>
+<p><strong>文档说明</strong>：本指南涵盖从 Windows 11 环境准备、Docker 容器搭建、开源 EDA 工具链激活，到 RTL 逻辑综合（Yosys）、静态时序分析（OpenSTA）以及数字后端布局布线（OpenLane）的完整实操流程。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%E6%90%AD%E5%BB%BA-windows--wsl2-%E7%8E%AF%E5%A2%83">第一阶段：搭建 Windows + WSL2 环境</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5openlane-%E4%BB%93%E5%BA%93%E5%85%8B%E9%9A%86%E4%B8%8E-docker-%E5%90%AF%E5%8A%A8">第二阶段：OpenLane 仓库克隆与 Docker 启动</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E9%98%B6%E6%AE%B5%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%B5%81%E7%A8%8B-synthesis--sta--gls">第三阶段：数字前端流程 (Synthesis &amp; STA &amp; GLS)</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E9%98%B6%E6%AE%B5%E6%95%B0%E5%AD%97%E5%90%8E%E7%AB%AF%E6%B5%81%E7%A8%8B-pr">第四阶段：数字后端流程 (P&amp;R)</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E9%98%B6%E6%AE%B5%E8%AE%BE%E8%AE%A1%E4%BA%A7%E7%89%A9%E4%B8%8E%E9%AA%8C%E6%94%B6">第五阶段：设计产物与验收</a></li>
+<li><a href="#%E9%99%84%E5%BD%95%E5%89%8D%E7%AB%AF%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC%E4%B8%8E%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3">附录：前端运行脚本与配置文件详解</a></li>
+</ul>
+<hr>
+<h2 id="第一阶段：搭建-Windows-WSL2-环境"><a href="#第一阶段：搭建-Windows-WSL2-环境" class="headerlink" title="第一阶段：搭建 Windows + WSL2 环境"></a>第一阶段：搭建 Windows + WSL2 环境</h2><h3 id="一、-准备工程目录结构"><a href="#一、-准备工程目录结构" class="headerlink" title="一、 准备工程目录结构"></a>一、 准备工程目录结构</h3><p>在 Windows 本地磁盘（如 <code>D:</code> 盘）建立标准化项目目录。该目录后续将直接挂载至 Docker 容器内的 <code>/work</code> 目录：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">D:\IC\risc_practice\phase3\           &lt;-- 对应容器内的 /work</span><br><span class="line">├── config.json                       # OpenLane 后端 P&amp;R 配置文件</span><br><span class="line">├── rtl/                              # 1. RTL 源代码目录 (*.v / *.sv)</span><br><span class="line">├── syn/                              # 2. 逻辑综合脚本 (synth.tcl)</span><br><span class="line">├── sta/                              # 3. STA 约束与分析脚本 (sta.sdc, sta.tcl)</span><br><span class="line">└── rep/                              # 4. 终极产物与报告输出目录 (网表, 报告)</span><br></pre></td></tr></table></figure>
+
+<h3 id="二、-开启-WSL2-Ubuntu"><a href="#二、-开启-WSL2-Ubuntu" class="headerlink" title="二、 开启 WSL2 (Ubuntu)"></a>二、 开启 WSL2 (Ubuntu)</h3><p>在 Windows 11 中开启 WSL2 支持。打开 PowerShell 验证版本：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wsl <span class="literal">-l</span> <span class="literal">-v</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>要求</strong>：确保指定的 Linux 发行版（如 Ubuntu）的 <code>VERSION</code> 显示为 <code>2</code>。</p>
+</blockquote>
+<h3 id="三、-配置-Docker-Desktop"><a href="#三、-配置-Docker-Desktop" class="headerlink" title="三、 配置 Docker Desktop"></a>三、 配置 Docker Desktop</h3><ol>
+<li>下载并安装 Docker Desktop，全程保持默认设置。</li>
+<li>确保勾选 <strong><code>Use WSL 2 instead of Hyper-V (recommended)</code></strong>。</li>
+<li>打开 Docker Desktop 设置界面，开启 <strong>WSL 深度集成 (WSL Integration)</strong>，勾选对应的 Ubuntu 发行版。</li>
+</ol>
+<hr>
+<h2 id="第二阶段：OpenLane-仓库克隆与-Docker-启动"><a href="#第二阶段：OpenLane-仓库克隆与-Docker-启动" class="headerlink" title="第二阶段：OpenLane 仓库克隆与 Docker 启动"></a>第二阶段：OpenLane 仓库克隆与 Docker 启动</h2><h3 id="四、-克隆-OpenLane-仓库"><a href="#四、-克隆-OpenLane-仓库" class="headerlink" title="四、 克隆 OpenLane 仓库"></a>四、 克隆 OpenLane 仓库</h3><p>进入 WSL2 Linux 环境的 <code>home</code> 目录下拉取 OpenLane 官方仓库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/The-OpenROAD-Project/OpenLane.git</span><br><span class="line"><span class="built_in">cd</span> OpenLane</span><br><span class="line">make   <span class="comment"># Makefile 会自动下载官方 Docker 镜像并配置 Volare PDK 管理工具</span></span><br></pre></td></tr></table></figure>
+<p>注意不要在&#x2F;mnt下运行，读写会有一堆问题</p>
+<h4 id="OpenLane-内置开源-EDA-工具链概览"><a href="#OpenLane-内置开源-EDA-工具链概览" class="headerlink" title="OpenLane 内置开源 EDA 工具链概览"></a>OpenLane 内置开源 EDA 工具链概览</h4><table>
+<thead>
+<tr>
+<th align="left">工具名称</th>
+<th align="left">核心用途</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Yosys</strong></td>
+<td align="left">逻辑综合</td>
+<td align="left">将 RTL 代码转化为门级网表 (Gate-Level Netlist)</td>
+</tr>
+<tr>
+<td align="left"><strong>OpenSTA</strong></td>
+<td align="left">静态时序分析</td>
+<td align="left">计算 Slack、最大时钟频率 ($f_{max}$)，定位关键路径</td>
+</tr>
+<tr>
+<td align="left"><strong>OpenROAD</strong></td>
+<td align="left">后端布局布线</td>
+<td align="left">包含 Floorplan、Placement、CTS、Routing 等全套子工具</td>
+</tr>
+<tr>
+<td align="left"><strong>KLayout</strong></td>
+<td align="left">版图查看</td>
+<td align="left">查看与导出 GDSII 版图文件</td>
+</tr>
+<tr>
+<td align="left"><strong>Volare</strong></td>
+<td align="left">PDK 版本管理</td>
+<td align="left">自动化管理与切换 SkyWater 130nm 等开源 PDK</td>
+</tr>
+</tbody></table>
+<h3 id="五、-启动容器并激活-Sky130-PDK"><a href="#五、-启动容器并激活-Sky130-PDK" class="headerlink" title="五、 启动容器并激活 Sky130 PDK"></a>五、 启动容器并激活 Sky130 PDK</h3><p>使用 PowerShell 将本地工程挂载到容器 <code>/work</code> 目录，并激活指定的 Sky130 PDK 版本：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动容器并挂载本地目录</span></span><br><span class="line">docker run <span class="literal">-dit</span> <span class="literal">--name</span> sta_analysis <span class="literal">-v</span> <span class="string">&quot;D:\IC\risc_practice\phase3:/work&quot;</span> efabless/openlane:latest</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 激活 Sky130 PDK 版本</span></span><br><span class="line">docker exec sta_analysis volare enable <span class="literal">--pdk</span> sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="第三阶段：数字前端流程"><a href="#第三阶段：数字前端流程" class="headerlink" title="第三阶段：数字前端流程"></a>第三阶段：数字前端流程</h2><h3 id="六、-逻辑综合-Yosys"><a href="#六、-逻辑综合-Yosys" class="headerlink" title="六、 逻辑综合 (Yosys)"></a>六、 逻辑综合 (Yosys)</h3><p>运行 Yosys 自动化综合脚本，生成门级网表：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it sta_analysis yosys -s /work/syn/synth.tcl</span><br></pre></td></tr></table></figure>
+
+<h3 id="七、-静态时序分析-OpenSTA"><a href="#七、-静态时序分析-OpenSTA" class="headerlink" title="七、 静态时序分析 (OpenSTA)"></a>七、 静态时序分析 (OpenSTA)</h3><p>运行 OpenSTA 检查建立&#x2F;保持时间裕量 (Setup&#x2F;Hold Slack) 与功耗报告：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it sta_analysis sta /work/sta/sta.tcl</span><br></pre></td></tr></table></figure>
+
+<h3 id="八、-门级仿真-GLS"><a href="#八、-门级仿真-GLS" class="headerlink" title="八、 门级仿真 (GLS)"></a>八、 门级仿真 (GLS)</h3><p>将综合后生成的 <code>synth.v</code> 网表、晶体管仿真模型 <code>sky130.v</code> 与 Testbench 一起进行门级功能验证。</p>
+<hr>
+<h2 id="第四阶段：数字后端流程-P-R"><a href="#第四阶段：数字后端流程-P-R" class="headerlink" title="第四阶段：数字后端流程 (P&amp;R)"></a>第四阶段：数字后端流程 (P&amp;R)</h2><h3 id="九、-运行-OpenLane-交互式后端流程"><a href="#九、-运行-OpenLane-交互式后端流程" class="headerlink" title="九、 运行 OpenLane 交互式后端流程"></a>九、 运行 OpenLane 交互式后端流程</h3><h4 id="Step-1-进入容器-Bash-终端"><a href="#Step-1-进入容器-Bash-终端" class="headerlink" title="Step 1: 进入容器 Bash 终端"></a>Step 1: 进入容器 Bash 终端</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it sta_analysis bash</span><br></pre></td></tr></table></figure>
+
+<h4 id="Step-2-进入-OpenLane-运行目录"><a href="#Step-2-进入-OpenLane-运行目录" class="headerlink" title="Step 2: 进入 OpenLane 运行目录"></a>Step 2: 进入 OpenLane 运行目录</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /openlane</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>技巧</strong>：若路径不正确，可执行 <code>find / -name &quot;flow.tcl&quot; 2&gt;/dev/null</code> 查找。</p>
+</blockquote>
+<h4 id="Step-3-启动-OpenLane-交互界面"><a href="#Step-3-启动-OpenLane-交互界面" class="headerlink" title="Step 3: 启动 OpenLane 交互界面"></a>Step 3: 启动 OpenLane 交互界面</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./flow.tcl -interactive</span><br><span class="line"><span class="comment"># 控制台提示符变为 %，表示成功进入 OpenLane Tcl 环境</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Step-4-依次执行后端设计步骤"><a href="#Step-4-依次执行后端设计步骤" class="headerlink" title="Step 4: 依次执行后端设计步骤"></a>Step 4: 依次执行后端设计步骤</h4><p>在 <code>%</code> 提示符下逐行运行：</p>
+<figure class="highlight tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> require openlane                     <span class="comment">;# 1. 加载 OpenLane 自动化包</span></span><br><span class="line">prep -design /work -tag run1 -overwrite      <span class="comment">;# 2. 载入 config.json 项目配置环境</span></span><br><span class="line"></span><br><span class="line">run_synthesis                                <span class="comment">;# 3. 运行后端标准化综合</span></span><br><span class="line">run_floorplan                                <span class="comment">;# 4. 楼层规划 (画 Die 面积与电源网格 PDN)</span></span><br><span class="line">run_placement                                <span class="comment">;# 5. 标准单元布局 (放置标准门电路)</span></span><br><span class="line">run_cts                                      <span class="comment">;# 6. 时钟树综合 (插入 Clock Buffer 优化 Clock Tree)</span></span><br><span class="line">run_routing                                  <span class="comment">;# 7. 详细布线 (耗时最久，查看 logs/routing/25-detailed.log)</span></span><br><span class="line">run_magic                                    <span class="comment">;# 8. DRC 版图检查与导出 GDSII 文件</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="第五阶段：设计产物与验收"><a href="#第五阶段：设计产物与验收" class="headerlink" title="第五阶段：设计产物与验收"></a>第五阶段：设计产物与验收</h2><p>设计运行完成后，核心成果将输出在本地目录的 <code>rep/</code> 及 <code>runs/</code> 中：</p>
+<h3 id="前后端核心产物清单"><a href="#前后端核心产物清单" class="headerlink" title="前后端核心产物清单"></a>前后端核心产物清单</h3><table>
+<thead>
+<tr>
+<th align="left">类别</th>
+<th align="left">文件路径</th>
+<th align="left">文件说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>前端产物</strong></td>
+<td align="left"><code>rep/synth.v</code></td>
+<td align="left">逻辑综合后生成的门级网表文件</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left"><code>rep/sta_setup.rpt</code></td>
+<td align="left">Max Path Setup 时序分析报告（查看 Slack 裕量）</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left"><code>rep/power.rpt</code></td>
+<td align="left">芯片功耗估算报告</td>
+</tr>
+<tr>
+<td align="left"><strong>后端产物</strong></td>
+<td align="left"><code>runs/run1/results/signoff/open_risc_v.gds</code></td>
+<td align="left"><strong>终极版图文件 (GDSII)</strong></td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left"><code>runs/run1/results/placement/</code></td>
+<td align="left">布局后的 DEF 文件目录</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left"><code>runs/run1/logs/</code></td>
+<td align="left">各阶段详细运行 Log 日志（按 Step 序号排列）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="附录：前端运行脚本与配置文件示例"><a href="#附录：前端运行脚本与配置文件示例" class="headerlink" title="附录：前端运行脚本与配置文件示例"></a>附录：前端运行脚本与配置文件示例</h2><h3 id="一、-编写-Yosys-综合脚本-syn-synth-tcl"><a href="#一、-编写-Yosys-综合脚本-syn-synth-tcl" class="headerlink" title="一、 编写 Yosys 综合脚本 (syn/synth.tcl)"></a>一、 编写 Yosys 综合脚本 (<code>syn/synth.tcl</code>)</h3><figure class="highlight tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 读取所有 RTL 源代码文件（根据依赖顺序，defines.v 优先）</span></span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/defines.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/ifetch.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/if_id.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/id.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/id_ex.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/ex.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/pc_reg.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/regs.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/ram.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/rom.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/simple_dual_ram.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/riscv_top.v</span><br><span class="line">read_verilog -sv -I/work/rtl /work/rtl/open_risc_v_soc.v</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 顶层层次检查与过程块展开 (-top 后接顶层模块名)</span></span><br><span class="line">hierarchy -check -top open_risc_v</span><br><span class="line"><span class="keyword">proc</span><span class="title"></span></span><br><span class="line"><span class="title">opt</span></span><br><span class="line"></span><br><span class="line"># 3. 将<span class="title"> Memory</span> 拆解为标准<span class="title"> DFF</span> (防止<span class="title"> Regfile</span> 无法映射到标准门)<span class="title"></span></span><br><span class="line"><span class="title">memory_dff</span></span><br><span class="line">memory_map<span class="title"></span></span><br><span class="line"><span class="title">opt</span></span><br><span class="line"></span><br><span class="line"># 4. 解锁带<span class="title"> Enable</span> 使能端的<span class="title"> DFF</span> 为<span class="title"> MUX</span> + 普通<span class="title"> DFF</span></span><br><span class="line">techmap<span class="title"></span></span><br><span class="line"><span class="title">opt</span></span><br><span class="line"></span><br><span class="line"># 5. 映射<span class="title"> DFF</span> 到<span class="title"> Sky130</span> 工艺库 (精准映射带低电平异步复位的<span class="title"> DFF)</span></span><br><span class="line">dfflegalize -cell $_DFF_PN0_ 0 -cell $_DFF_P_ 0 -cell $_DFF_PP0_ 0<span class="title"></span></span><br><span class="line"><span class="title">dfflibmap</span> -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib</span><br><span class="line"></span><br><span class="line"># 6. 映射组合逻辑<span class="title"></span></span><br><span class="line"><span class="title">abc</span> -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib<span class="title"></span></span><br><span class="line"><span class="title">opt_clean</span> -purge</span><br><span class="line"></span><br><span class="line"># 7. 清除属性并导出网表<span class="title"></span></span><br><span class="line"><span class="title">write_verilog</span> -noattr /work/rep/synth.v</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>综合注意事项</strong>：</p>
+<ol>
+<li><strong>头文件顺序</strong>：<code>defines.v</code> 等宏定义文件必须排在最前方。</li>
+<li><strong>消除抽象门&#x2F;Latch</strong>：必须使用 <code>memory_dff</code> 和 <code>memory_map</code>。若未正确映射，网表中会残留 <code>$_DLATCH_N_</code> 或 <code>$_DFF_PN0_</code> 等抽象器件，导致后续 <strong>OpenSTA 时序分析直接崩溃</strong>。</li>
+<li><strong>网表质量自检</strong>：综合完成后，建议在 PowerShell 中搜索生成的网表，<strong>确保输出为 0 行结果</strong>：<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Select-String</span> <span class="literal">-Path</span> <span class="string">&quot;D:\IC\risc_practice\phase3\rep\synth.v&quot;</span> <span class="literal">-Pattern</span> <span class="string">&quot;always&quot;</span></span><br><span class="line"><span class="built_in">Select-String</span> <span class="literal">-Path</span> <span class="string">&quot;D:\IC\risc_practice\phase3\rep\synth.v&quot;</span> <span class="literal">-Pattern</span> <span class="string">&quot;\<span class="variable">$_</span>&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+</blockquote>
+<hr>
+<h3 id="二、-编写-STA-时序约束文件-sta-sta-sdc"><a href="#二、-编写-STA-时序约束文件-sta-sta-sdc" class="headerlink" title="二、 编写 STA 时序约束文件 (sta/sta.sdc)"></a>二、 编写 STA 时序约束文件 (<code>sta/sta.sdc</code>)</h3><figure class="highlight tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 定义主时钟 clk，周期设为 10.0 ns (对应 100MHz 目标频率)</span></span><br><span class="line">create_clock -name clk -period <span class="number">10.0</span> [get_ports clk]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 设置输入延迟 (排除 clk 端口本身，避免 Warning)</span></span><br><span class="line">set_input_delay <span class="number">2.0</span> -<span class="keyword">clock</span> clk [get_ports * -filter <span class="string">&quot;direction == input &amp;&amp; name != clk&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 设置输出延迟</span></span><br><span class="line">set_output_delay <span class="number">2.0</span> -<span class="keyword">clock</span> clk [all_outputs]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="三、-编写-OpenSTA-分析脚本-sta-sta-tcl"><a href="#三、-编写-OpenSTA-分析脚本-sta-sta-tcl" class="headerlink" title="三、 编写 OpenSTA 分析脚本 (sta/sta.tcl)"></a>三、 编写 OpenSTA 分析脚本 (<code>sta/sta.tcl</code>)</h3><figure class="highlight tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 读入 Sky130 物理时序库 (.lib)</span></span><br><span class="line">read_liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 读入综合门级网表</span></span><br><span class="line">read_verilog /work/rep/synth.v</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 绑定顶层模块</span></span><br><span class="line">link_design open_risc_v</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 读入 SDC 约束文件</span></span><br><span class="line">read_sdc /work/sta/sta.sdc</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 输出 Setup / Hold 时序报告与功耗报告至 rep/ 目录</span></span><br><span class="line">report_checks -path_delay max -<span class="keyword">format</span> full_clock_expanded -digits <span class="number">4</span> &gt; /work/rep/sta_setup.rpt</span><br><span class="line">report_checks -path_delay min -<span class="keyword">format</span> full_clock_expanded -digits <span class="number">4</span> &gt; /work/rep/sta_hold.rpt</span><br><span class="line">report_power &gt; /work/rep/power.rpt</span><br><span class="line"></span><br><span class="line"><span class="keyword">exit</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="四、-编写-OpenLane-后端配置文件-config-json"><a href="#四、-编写-OpenLane-后端配置文件-config-json" class="headerlink" title="四、 编写 OpenLane 后端配置文件 (config.json)"></a>四、 编写 OpenLane 后端配置文件 (<code>config.json</code>)</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;DESIGN_NAME&quot;</span><span class="punctuation">:</span> <span class="string">&quot;open_risc_v&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;VERILOG_FILES&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;dir::rtl/defines.v&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;dir::rtl/open_risc_v_soc.v&quot;</span></span><br><span class="line">    <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;CLOCK_PORT&quot;</span><span class="punctuation">:</span> <span class="string">&quot;clk&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;CLOCK_PERIOD&quot;</span><span class="punctuation">:</span> <span class="number">10.0</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;FP_CORE_UTIL&quot;</span><span class="punctuation">:</span> <span class="number">40</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PL_TARGET_DENSITY&quot;</span><span class="punctuation">:</span> <span class="number">0.45</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;FP_PDN_MULTILAYER&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>参数说明</strong>：<code>FP_CORE_UTIL: 40</code> 代表逻辑单元占用芯片 Core 面积的 40%，预留 60% 空间供金属线网布线，可有效规避后端 Routing 拥塞 (Congestion)。</p>
+</blockquote>
+<hr>
+<h3 id="五、-常用容器运维指令"><a href="#五、-常用容器运维指令" class="headerlink" title="五、 常用容器运维指令"></a>五、 常用容器运维指令</h3><p>在 Windows PowerShell 中执行的日常容器维护命令：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 查看所有容器状态 (包括运行中与暂停的)</span></span><br><span class="line">docker <span class="built_in">ps</span> <span class="literal">-a</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 启动已休眠的容器</span></span><br><span class="line">docker <span class="built_in">start</span> sta_analysis</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 进入运行中的容器 Bash</span></span><br><span class="line">docker exec <span class="literal">-it</span> sta_analysis bash</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 停止并删除容器</span></span><br><span class="line">docker stop sta_analysis</span><br><span class="line">docker <span class="built_in">rm</span> sta_analysis</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 一键重新创建容器并挂载工程目录</span></span><br><span class="line">docker run <span class="literal">-dit</span> <span class="literal">--name</span> sta_analysis <span class="literal">-v</span> <span class="string">&quot;D:\IC\risc_practice\phase3:/work&quot;</span> efabless/openlane:latest</span><br><span class="line">docker exec sta_analysis volare enable <span class="literal">--pdk</span> sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b</span><br></pre></td></tr></table></figure></article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%95%B0%E5%AD%97IC/">数字IC</a><a class="post-meta__tags" href="/tags/Openlane/">Openlane</a><a class="post-meta__tags" href="/tags/%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8/">工具使用</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/butterfly-extsrc/1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdnjs.cloudflare.com/ajax/libs/butterfly-extsrc/1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SOP%EF%BC%9AWSL2-Docker-%E6%90%AD%E5%BB%BA-OpenLane-%E6%95%B0%E5%AD%97%E8%8A%AF%E7%89%87%E7%BB%BC%E5%90%88%E4%B8%8E-STA-%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%90%AD%E5%BB%BA-Windows-WSL2-%E7%8E%AF%E5%A2%83"><span class="toc-number">1.2.</span> <span class="toc-text">第一阶段：搭建 Windows + WSL2 环境</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81-%E5%87%86%E5%A4%87%E5%B7%A5%E7%A8%8B%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84"><span class="toc-number">1.2.1.</span> <span class="toc-text">一、 准备工程目录结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81-%E5%BC%80%E5%90%AF-WSL2-Ubuntu"><span class="toc-number">1.2.2.</span> <span class="toc-text">二、 开启 WSL2 (Ubuntu)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81-%E9%85%8D%E7%BD%AE-Docker-Desktop"><span class="toc-number">1.2.3.</span> <span class="toc-text">三、 配置 Docker Desktop</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%EF%BC%9AOpenLane-%E4%BB%93%E5%BA%93%E5%85%8B%E9%9A%86%E4%B8%8E-Docker-%E5%90%AF%E5%8A%A8"><span class="toc-number">1.3.</span> <span class="toc-text">第二阶段：OpenLane 仓库克隆与 Docker 启动</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81-%E5%85%8B%E9%9A%86-OpenLane-%E4%BB%93%E5%BA%93"><span class="toc-number">1.3.1.</span> <span class="toc-text">四、 克隆 OpenLane 仓库</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#OpenLane-%E5%86%85%E7%BD%AE%E5%BC%80%E6%BA%90-EDA-%E5%B7%A5%E5%85%B7%E9%93%BE%E6%A6%82%E8%A7%88"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">OpenLane 内置开源 EDA 工具链概览</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81-%E5%90%AF%E5%8A%A8%E5%AE%B9%E5%99%A8%E5%B9%B6%E6%BF%80%E6%B4%BB-Sky130-PDK"><span class="toc-number">1.3.2.</span> <span class="toc-text">五、 启动容器并激活 Sky130 PDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%B5%81%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">第三阶段：数字前端流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AD%E3%80%81-%E9%80%BB%E8%BE%91%E7%BB%BC%E5%90%88-Yosys"><span class="toc-number">1.4.1.</span> <span class="toc-text">六、 逻辑综合 (Yosys)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%83%E3%80%81-%E9%9D%99%E6%80%81%E6%97%B6%E5%BA%8F%E5%88%86%E6%9E%90-OpenSTA"><span class="toc-number">1.4.2.</span> <span class="toc-text">七、 静态时序分析 (OpenSTA)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AB%E3%80%81-%E9%97%A8%E7%BA%A7%E4%BB%BF%E7%9C%9F-GLS"><span class="toc-number">1.4.3.</span> <span class="toc-text">八、 门级仿真 (GLS)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%95%B0%E5%AD%97%E5%90%8E%E7%AB%AF%E6%B5%81%E7%A8%8B-P-R"><span class="toc-number">1.5.</span> <span class="toc-text">第四阶段：数字后端流程 (P&amp;R)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B9%9D%E3%80%81-%E8%BF%90%E8%A1%8C-OpenLane-%E4%BA%A4%E4%BA%92%E5%BC%8F%E5%90%8E%E7%AB%AF%E6%B5%81%E7%A8%8B"><span class="toc-number">1.5.1.</span> <span class="toc-text">九、 运行 OpenLane 交互式后端流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Step-1-%E8%BF%9B%E5%85%A5%E5%AE%B9%E5%99%A8-Bash-%E7%BB%88%E7%AB%AF"><span class="toc-number">1.5.1.1.</span> <span class="toc-text">Step 1: 进入容器 Bash 终端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Step-2-%E8%BF%9B%E5%85%A5-OpenLane-%E8%BF%90%E8%A1%8C%E7%9B%AE%E5%BD%95"><span class="toc-number">1.5.1.2.</span> <span class="toc-text">Step 2: 进入 OpenLane 运行目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Step-3-%E5%90%AF%E5%8A%A8-OpenLane-%E4%BA%A4%E4%BA%92%E7%95%8C%E9%9D%A2"><span class="toc-number">1.5.1.3.</span> <span class="toc-text">Step 3: 启动 OpenLane 交互界面</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Step-4-%E4%BE%9D%E6%AC%A1%E6%89%A7%E8%A1%8C%E5%90%8E%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.5.1.4.</span> <span class="toc-text">Step 4: 依次执行后端设计步骤</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E9%98%B6%E6%AE%B5%EF%BC%9A%E8%AE%BE%E8%AE%A1%E4%BA%A7%E7%89%A9%E4%B8%8E%E9%AA%8C%E6%94%B6"><span class="toc-number">1.6.</span> <span class="toc-text">第五阶段：设计产物与验收</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E5%90%8E%E7%AB%AF%E6%A0%B8%E5%BF%83%E4%BA%A7%E7%89%A9%E6%B8%85%E5%8D%95"><span class="toc-number">1.6.1.</span> <span class="toc-text">前后端核心产物清单</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95%EF%BC%9A%E5%89%8D%E7%AB%AF%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC%E4%B8%8E%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.7.</span> <span class="toc-text">附录：前端运行脚本与配置文件示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81-%E7%BC%96%E5%86%99-Yosys-%E7%BB%BC%E5%90%88%E8%84%9A%E6%9C%AC-syn-synth-tcl"><span class="toc-number">1.7.1.</span> <span class="toc-text">一、 编写 Yosys 综合脚本 (syn&#x2F;synth.tcl)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81-%E7%BC%96%E5%86%99-STA-%E6%97%B6%E5%BA%8F%E7%BA%A6%E6%9D%9F%E6%96%87%E4%BB%B6-sta-sta-sdc"><span class="toc-number">1.7.2.</span> <span class="toc-text">二、 编写 STA 时序约束文件 (sta&#x2F;sta.sdc)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81-%E7%BC%96%E5%86%99-OpenSTA-%E5%88%86%E6%9E%90%E8%84%9A%E6%9C%AC-sta-sta-tcl"><span class="toc-number">1.7.3.</span> <span class="toc-text">三、 编写 OpenSTA 分析脚本 (sta&#x2F;sta.tcl)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81-%E7%BC%96%E5%86%99-OpenLane-%E5%90%8E%E7%AB%AF%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6-config-json"><span class="toc-number">1.7.4.</span> <span class="toc-text">四、 编写 OpenLane 后端配置文件 (config.json)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81-%E5%B8%B8%E7%94%A8%E5%AE%B9%E5%99%A8%E8%BF%90%E7%BB%B4%E6%8C%87%E4%BB%A4"><span class="toc-number">1.7.5.</span> <span class="toc-text">五、 常用容器运维指令</span></a></li></ol></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By yanghong7</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><script> document.addEventListener('DOMContentLoaded', function() { var desc = document.querySelector('.author-info__description'); if (desc) { var extra = document.createElement('div'); extra.className = 'author-info__extra'; extra.innerHTML = '<div style="margin-top:1rem;font-size:0.9rem;color:var(--text-color);line-height:1.8;">' + '<div style="font-style:italic;margin-bottom:0.5rem;">✎ Thinking will never teach you how to live.</div>' + '<div style="margin-bottom:0.75rem;padding:0.4rem 0.6rem;border-left:3px solid var(--post-link-color);background:var(--link-hover-bg-color);border-radius:0.25rem;font-size:0.85rem;color:var(--text-color);">📝 个性签名：在这里写下你的签名</div>' + '<div style="font-size:0.85rem;color:var(--sec-text-color);">🏫 NJU · 数字IC</div>' + '<div style="font-size:0.85rem;color:var(--sec-text-color);margin-bottom:0.75rem;">✉ 241180055@smail.nju.edu.cn</div>' + '</div>'; desc.after(extra); } }); </script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索..." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>

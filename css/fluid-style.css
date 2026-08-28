@@ -651,7 +651,6 @@ html[data-theme="dark"] img {
 #archive .article-sort-title,
 #category .article-sort-title,
 #tag .article-sort-title {
-  margin: 0 0 1.15rem !important;
   color: var(--post-heading-color) !important;
   font-size: 1.35rem !important;
   line-height: 1.4;
@@ -659,29 +658,21 @@ html[data-theme="dark"] img {
 #archive .article-sort,
 #category .article-sort,
 #tag .article-sort {
-  margin-left: 0 !important;
-  padding-left: 1.15rem !important;
   border-left-color: var(--line-color) !important;
 }
-#archive .article-sort-item:not(.year),
-#category .article-sort-item:not(.year),
-#tag .article-sort-item:not(.year) {
-  margin: 0 !important;
-  padding: 0.9rem 0.7rem !important;
-  border-bottom: 1px solid var(--line-color);
-  border-radius: 0.35rem;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+#archive .article-sort-title::after,
+#category .article-sort-title::after,
+#tag .article-sort-title::after {
+  background: var(--line-color) !important;
 }
-#archive .article-sort-item:not(.year):last-child,
-#category .article-sort-item:not(.year):last-child,
-#tag .article-sort-item:not(.year):last-child {
-  border-bottom: none;
-}
-#archive .article-sort-item:not(.year):hover,
-#category .article-sort-item:not(.year):hover,
-#tag .article-sort-item:not(.year):hover {
-  background: var(--chip-bg-color);
-  transform: translateX(2px);
+#archive .article-sort-title::before,
+#archive .article-sort-item::before,
+#category .article-sort-title::before,
+#category .article-sort-item::before,
+#tag .article-sort-title::before,
+#tag .article-sort-item::before {
+  background: var(--board-bg-color) !important;
+  border-color: var(--post-link-color) !important;
 }
 #archive .article-sort-item-time,
 #category .article-sort-item-time,

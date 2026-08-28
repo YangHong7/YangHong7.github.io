@@ -68,7 +68,7 @@ index_generator:
 default_category: uncategorized
 category_map:
   数字 IC: digital-ic
-  工具与效率: tools-workflow
+  工具: tools-workflow
 tag_map:
 
 # Metadata elements

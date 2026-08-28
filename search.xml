@@ -37,14 +37,12 @@ FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增�
 
 ]]></content>
       <categories>
-        <category>数字IC</category>
-        <category>前端设计</category>
-        <category>存储器设计</category>
+        <category>数字 IC</category>
       </categories>
       <tags>
         <tag>FIFO</tag>
         <tag>存储器设计</tag>
-        <tag>数字IC</tag>
+        <tag>RTL</tag>
       </tags>
   </entry>
   <entry>
@@ -208,15 +206,12 @@ runs/run1/logs/
 # 1. 查看所有容器状态 (包括运行中与暂停的)docker ps -a# 2. 启动已休眠的容器docker start sta_analysis# 3. 进入运行中的容器 Bashdocker exec -it sta_analysis bash# 4. 停止并删除容器docker stop sta_analysisdocker rm sta_analysis# 5. 一键重新创建容器并挂载工程目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latestdocker exec sta_analysis volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b
 ]]></content>
       <categories>
-        <category>数字IC</category>
-        <category>工具使用</category>
-        <category>后端设计</category>
-        <category>EDA工具</category>
+        <category>数字 IC</category>
       </categories>
       <tags>
-        <tag>数字IC</tag>
         <tag>Openlane</tag>
-        <tag>工具使用</tag>
+        <tag>EDA</tag>
+        <tag>后端设计</tag>
       </tags>
   </entry>
   <entry>
@@ -457,13 +452,12 @@ Node.js 官方下载页面
 
 ]]></content>
       <categories>
-        <category>工具使用</category>
-        <category>AI工具</category>
+        <category>工具与效率</category>
       </categories>
       <tags>
-        <tag>工具使用</tag>
-        <tag>Claude Code</tag>
-        <tag>其他</tag>
+        <tag>CCB</tag>
+        <tag>AI 工具</tag>
+        <tag>开发环境</tag>
       </tags>
   </entry>
 </search>

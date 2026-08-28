@@ -6,7 +6,8 @@ tags:
   - 工具使用
   - 数字IC
 categories:
-  - 数字IC
+  - [数字IC, 后端设计]
+  - [工具使用, EDA工具]
 ---
 
 

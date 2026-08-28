@@ -122,7 +122,7 @@ footer:
   copyright:
     enable: true
     version: true
-  custom_text:
+  custom_text: '<div class="footer-custom-text">Thinking will never teach you how to live.</div>'
 
 # ========== 暗色模式 ==========
 darkmode:
@@ -194,23 +194,18 @@ font:
 # ========== 自定义 CSS 注入 ==========
 inject:
   head:
-    - <link rel="stylesheet" href="/css/fluid-style.css?v=4">
+    - <link rel="stylesheet" href="/css/fluid-style.css?v=7">
     - <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     - <script>document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');});</script>
   bottom:
     - <script>
       document.addEventListener('DOMContentLoaded', function() {
-        var desc = document.querySelector('.author-info__description');
+        var desc = document.querySelector('.author-info-description');
         if (desc) {
-          var extra = document.createElement('div');
-          extra.className = 'author-info__extra';
-          extra.innerHTML = '<div style="margin-top:1rem;font-size:0.9rem;color:var(--text-color);line-height:1.8;">' +
-            '<div style="font-style:italic;margin-bottom:0.5rem;">✎ Thinking will never teach you how to live.</div>' +
-            '<div style="margin-bottom:0.75rem;padding:0.4rem 0.6rem;border-left:3px solid var(--post-link-color);background:var(--link-hover-bg-color);border-radius:0.25rem;font-size:0.85rem;color:var(--text-color);">📝 个性签名：在这里写下你的签名</div>' +
-            '<div style="font-size:0.85rem;color:var(--sec-text-color);">🏫 NJU · 数字IC</div>' +
-            '<div style="font-size:0.85rem;color:var(--sec-text-color);margin-bottom:0.75rem;">✉ 241180055@smail.nju.edu.cn</div>' +
-            '</div>';
-          desc.after(extra);
+          var motto = document.createElement('div');
+          motto.className = 'author-info-motto';
+          motto.textContent = 'stay simple, stay real';
+          desc.after(motto);
         }
       });
       </script>

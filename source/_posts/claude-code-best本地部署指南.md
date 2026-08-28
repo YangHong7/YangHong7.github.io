@@ -1,6 +1,7 @@
 ---
 title: Claude Code Best (CCB) 本地部署与使用
 date: 2026-07-25
+aside: false
 tags:
   - Claude Code
   - 工具使用

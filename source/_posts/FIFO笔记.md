@@ -1,6 +1,7 @@
 ---
 title: FIFO笔记
 date: 2026-07-20
+aside: false
 tags:
   - FIFO
   - 存储器设计

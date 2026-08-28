@@ -26,8 +26,8 @@ comments: false
     <h3 class="about-section-title"><i class="fas fa-paper-plane"></i> 联系方式</h3>
     <ul class="about-contact">
       <li><i class="fas fa-envelope"></i><a href="mailto:yanghong.ee.nju@outlook.com">yanghong.ee.nju@outlook.com</a></li>
-      <li><i class="fab fa-github"></i><a href="https://github.com/yanghong7" target="_blank">github.com/yanghong7</a></li>
-      <li><i class="fas fa-music"></i><a href="https://music.163.com/#/user/home?id=7832095894" target="_blank">网易云音乐</a></li>
+      <li><i class="fab fa-github"></i><a href="https://github.com/yanghong7" target="_blank" rel="noopener noreferrer">github.com/yanghong7</a></li>
+      <li><i class="fas fa-music"></i><a href="https://music.163.com/#/user/home?id=7832095894" target="_blank" rel="noopener noreferrer">网易云音乐</a></li>
     </ul>
   </div>
 

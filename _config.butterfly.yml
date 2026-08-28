@@ -1,5 +1,8 @@
 # Butterfly 主题配置 — 仿 Fluid 风格
 
+# ========== 站点图标 ==========
+favicon: /img/favicon.ico
+
 # ========== 导航 ==========
 nav:
   logo:
@@ -88,7 +91,7 @@ aside:
     category: true
   card_author:
     enable: true
-    description: 数字IC 项目&笔记
+    description: '数字IC 项目&笔记<div class="author-info-motto">stay simple, stay real</div>'
     button:
       enable: false
       icon: fab fa-github
@@ -195,17 +198,7 @@ font:
 inject:
   head:
     - <link rel="stylesheet" href="/css/fluid-style.css?v=7">
-    - <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-    - <script>document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');});</script>
-  bottom:
-    - <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var desc = document.querySelector('.author-info-description');
-        if (desc) {
-          var motto = document.createElement('div');
-          motto.className = 'author-info-motto';
-          motto.textContent = 'stay simple, stay real';
-          desc.after(motto);
-        }
-      });
-      </script>
+
+# 保留当前第三方资源来源；主题本体由 npm 包提供
+CDN:
+  third_party_provider: cdnjs

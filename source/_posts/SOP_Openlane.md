@@ -1,6 +1,7 @@
 ---
 title: Openlane工具链部署和使用
 date: 2026-07-17
+aside: false
 tags:
   - Openlane
   - 工具使用

@@ -10,7 +10,7 @@ comments: false
   <div class="about-card">
     <h3 class="about-section-title"><i class="fas fa-user"></i> 关于我</h3>
     <p>南京大学在读，方向数字集成设计、LLM量化和硬件加速（算了，遇到什么学什么吧😰），人生小理想是n年后可以成为架构师[加油]。</p>
-    <p>这里记录学习过程中的笔记与心得（几乎无）。</p>
+    <p>这里记录学习过程中的笔记与心得（几乎无，不要期待）。</p>
   </div>
 
 

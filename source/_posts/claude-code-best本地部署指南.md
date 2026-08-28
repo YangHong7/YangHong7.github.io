@@ -2,12 +2,14 @@
 title: Claude Code Best (CCB) 本地部署与使用
 date: 2026-07-25
 aside: false
+description: 在本地部署 CCB，并连接 DeepSeek API 与 VS Code 的配置和维护指南。
+cover: /img/columns/tools-workflow.jpg
 tags:
-  - Claude Code
-  - 工具使用
-  - 其他
+  - CCB
+  - AI 工具
+  - 开发环境
 categories:
-  - [工具使用, AI工具]
+  - 工具与效率
 ---
 
 ---

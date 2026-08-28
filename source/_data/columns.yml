@@ -1,0 +1,20 @@
+- name: 数字 IC
+  eyebrow: DIGITAL DESIGN
+  tagline: 从 RTL 到实现，把硬件设计落到细节
+  description: 聚焦数字电路设计、验证与实现流程，记录可以复现的结构分析、工具实践和工程判断。
+  cover: /img/columns/digital-ic.jpg
+  tags:
+    - FIFO
+    - RTL
+    - EDA
+    - 后端设计
+
+- name: 工具与效率
+  eyebrow: TOOLS & WORKFLOW
+  tagline: 让环境、工具链与自动化真正服务于工作
+  description: 整理开发环境、AI 工具和日常工作流，把零散配置沉淀成可靠、可维护的方法。
+  cover: /img/columns/tools-workflow.jpg
+  tags:
+    - CCB
+    - AI 工具
+    - 开发环境

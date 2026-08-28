@@ -2,13 +2,14 @@
 title: Openlane工具链部署和使用
 date: 2026-07-17
 aside: false
+description: 从 WSL2 与 Docker 环境搭建，到综合、STA 和布局布线的完整实践流程。
+cover: /img/columns/digital-ic.jpg
 tags:
   - Openlane
-  - 工具使用
-  - 数字IC
+  - EDA
+  - 后端设计
 categories:
-  - [数字IC, 后端设计]
-  - [工具使用, EDA工具]
+  - 数字 IC
 ---
 
 

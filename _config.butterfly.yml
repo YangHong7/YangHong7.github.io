@@ -88,7 +88,7 @@ aside:
   display:
     archive: true
     tag: true
-    category: true
+    category: false
   card_author:
     enable: true
     description: '数字IC 项目&笔记<div class="author-info-motto">stay simple, stay real</div>'
@@ -197,7 +197,7 @@ font:
 # ========== 自定义 CSS 注入 ==========
 inject:
   head:
-    - <link rel="stylesheet" href="/css/fluid-style.css?v=8">
+    - <link rel="stylesheet" href="/css/fluid-style.css?v=9">
 
 # 保留当前第三方资源来源；主题本体由 npm 包提供
 CDN:

@@ -2,12 +2,14 @@
 title: FIFO笔记
 date: 2026-07-20
 aside: false
+description: 记录同步与异步 FIFO 的结构、空满判断、指针设计及仿真验证。
+cover: "/img/posts/Pasted image 20260720120551.png"
 tags:
   - FIFO
   - 存储器设计
-  - 数字IC
+  - RTL
 categories:
-  - [数字IC, 前端设计, 存储器设计]
+  - 数字 IC
 ---
 
 

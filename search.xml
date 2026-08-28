@@ -1,6 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>FIFO笔记</title>
+    <url>/2026/07/20/FIFO%E7%AC%94%E8%AE%B0/</url>
+    <content><![CDATA[同步FIFO的设计和仿真使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count &#x3D;0时FIFO为空，但count &#x3D;DEPTH 时FIFO写满。
+w_ptr与r_ptr 同时也是FIFO存结构的写读地址（区别于异步FIFO里面高位扩充的gray码形式w_ptr和r_ptr）。
+full和empty可以采用组合逻辑判断输出，此时读写和指针移动直接用full和empty信号作为操作判断；如果采用时序输出，需要先引入full_value、empty_value计算结果，在打拍写入full、empty，这时候读写和指针移动用full_value和empty_value信号作为操作判断。
+考虑RAM读写冲突的可能性，读和写在同一地址的情况只有两种，满和空时同时读写。我写的代码时保守型的FIFO，在以上两种情况下对操作的处理分别是只读不写、只写不读，对数据起到充分缓冲。
+
+
+
+
+
+
+
+
+
+
+更加激进的低延时流水操作是
+
+FIFO 为空（empty）时同时读写：写入的数据立即被读（read data &#x3D; write data）。这是一种常见且合法的操作（bypass FIFO）。
+FIFO 为满（full）时同时读写：读操作会腾出一个位置，写操作会填入新数据。(ASIC设计大多是这样)
+普通情况（既不满也不空）：写指针和读指针同时递增，FIFO 占用深度保持不变。
+
+summary: full 时同时读写，full 保持；empty 时同时读写，取决于是否支持 bypass，普通 FIFO 会解除 empty，高性能 FIFO 通常保持 empty。设计核心：
+//读成功rd_fire = rd_en &amp;&amp; (!empty || wr_en_bypass);//写成功wr_fire = wr_en &amp;&amp; (!full || rd_en);//计数逻辑count_next = count + wr_fire - rd_fire;
+
+
+standard mode 和 FWFT mode
+FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增加2
+
+
+
+异步FIFO的设计和仿真
+
+
+]]></content>
+      <categories>
+        <category>数字IC</category>
+        <category>前端设计</category>
+        <category>存储器设计</category>
+      </categories>
+      <tags>
+        <tag>FIFO</tag>
+        <tag>存储器设计</tag>
+        <tag>数字IC</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Openlane工具链部署和使用</title>
     <url>/2026/07/17/SOP_Openlane/</url>
     <content><![CDATA[
@@ -158,63 +205,18 @@ runs/run1/logs/
 
 
 五、 常用容器运维指令在 Windows PowerShell 中执行的日常容器维护命令：
-# 1. 查看所有容器状态 (包括运行中与暂停的)docker ps -a# 2. 启动已休眠的容器docker start sta_analysis# 3. 进入运行中的容器 Bashdocker exec -it sta_analysis bash# 4. 停止并删除容器docker stop sta_analysisdocker rm sta_analysis# 5. 一键重新创建容器并挂载工程目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latestdocker exec sta_analysis volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b]]></content>
-      <categories>
-        <category>数字IC</category>
-        <category>后端设计</category>
-        <category>工具使用</category>
-        <category>EDA工具</category>
-      </categories>
-      <tags>
-        <tag>Openlane</tag>
-        <tag>工具使用</tag>
-        <tag>数字IC</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>FIFO笔记</title>
-    <url>/2026/07/20/FIFO%E7%AC%94%E8%AE%B0/</url>
-    <content><![CDATA[同步FIFO的设计和仿真使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count &#x3D;0时FIFO为空，但count &#x3D;DEPTH 时FIFO写满。
-w_ptr与r_ptr 同时也是FIFO存结构的写读地址（区别于异步FIFO里面高位扩充的gray码形式w_ptr和r_ptr）。
-full和empty可以采用组合逻辑判断输出，此时读写和指针移动直接用full和empty信号作为操作判断；如果采用时序输出，需要先引入full_value、empty_value计算结果，在打拍写入full、empty，这时候读写和指针移动用full_value和empty_value信号作为操作判断。
-考虑RAM读写冲突的可能性，读和写在同一地址的情况只有两种，满和空时同时读写。我写的代码时保守型的FIFO，在以上两种情况下对操作的处理分别是只读不写、只写不读，对数据起到充分缓冲。
-
-
-
-
-
-
-
-
-
-
-更加激进的低延时流水操作是
-
-FIFO 为空（empty）时同时读写：写入的数据立即被读（read data &#x3D; write data）。这是一种常见且合法的操作（bypass FIFO）。
-FIFO 为满（full）时同时读写：读操作会腾出一个位置，写操作会填入新数据。(ASIC设计大多是这样)
-普通情况（既不满也不空）：写指针和读指针同时递增，FIFO 占用深度保持不变。
-
-summary: full 时同时读写，full 保持；empty 时同时读写，取决于是否支持 bypass，普通 FIFO 会解除 empty，高性能 FIFO 通常保持 empty。设计核心：
-//读成功rd_fire = rd_en &amp;&amp; (!empty || wr_en_bypass);//写成功wr_fire = wr_en &amp;&amp; (!full || rd_en);//计数逻辑count_next = count + wr_fire - rd_fire;
-
-
-standard mode 和 FWFT mode
-FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增加2
-
-
-
-异步FIFO的设计和仿真
-
+# 1. 查看所有容器状态 (包括运行中与暂停的)docker ps -a# 2. 启动已休眠的容器docker start sta_analysis# 3. 进入运行中的容器 Bashdocker exec -it sta_analysis bash# 4. 停止并删除容器docker stop sta_analysisdocker rm sta_analysis# 5. 一键重新创建容器并挂载工程目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latestdocker exec sta_analysis volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b
 ]]></content>
       <categories>
         <category>数字IC</category>
-        <category>前端设计</category>
-        <category>存储器设计</category>
+        <category>工具使用</category>
+        <category>后端设计</category>
+        <category>EDA工具</category>
       </categories>
       <tags>
         <tag>数字IC</tag>
-        <tag>FIFO</tag>
-        <tag>存储器设计</tag>
+        <tag>Openlane</tag>
+        <tag>工具使用</tag>
       </tags>
   </entry>
   <entry>

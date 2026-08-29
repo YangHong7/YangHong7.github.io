@@ -197,7 +197,7 @@ font:
 # ========== 自定义 CSS 注入 ==========
 inject:
   head:
-    - <link rel="stylesheet" href="/css/fluid-style.css?v=9">
+    - <link rel="stylesheet" href="/css/fluid-style.css?v=10">
 
 # 保留当前第三方资源来源；主题本体由 npm 包提供
 CDN:

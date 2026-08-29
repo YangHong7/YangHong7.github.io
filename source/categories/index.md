@@ -8,8 +8,8 @@ aside: false
 
 <div class="column-page-intro">
   <span class="column-page-eyebrow">COLUMNS</span>
-  <h1>by topics</h1>
-  <p>work and life (balance ?)</p>
+  <h1>Work and life</h1>
+  <p>balance ?</p>
 </div>
 
 {% column_grid %}

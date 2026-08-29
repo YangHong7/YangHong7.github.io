@@ -69,6 +69,7 @@ default_category: uncategorized
 category_map:
   数字 IC: digital-ic
   工具: tools-workflow
+  想法: thoughts
 tag_map:
 
 # Metadata elements

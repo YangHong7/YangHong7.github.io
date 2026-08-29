@@ -1,8 +1,8 @@
 - name: 数字 IC
   eyebrow: DIGITAL DESIGN
   tagline: 从 RTL 到实现
-  description: 数字电路设计、验证与实现流程，可复现的结构分析、工具实践和工程判断
-  cover: /img/columns/digital-ic.jpg
+  description: 数字电路设计、验证与实现。
+  cover: /img/columns/digital-ic-sketch.jpg
   tags:
     - FIFO
     - RTL
@@ -11,10 +11,19 @@
 
 - name: 工具
   eyebrow: TOOLS & WORKFLOW
-  tagline: 整理开发环境、AI 工具和日常工作流
-  description: 无
-  cover: /img/columns/tools-workflow.jpg
+  tagline: 工具、环境与工作流
+  description: 开发环境、AI 工具与工作流。
+  cover: /img/columns/tools-sketch.jpg
   tags:
     - CCB
     - AI 工具
     - 开发环境
+
+- name: 想法
+  eyebrow: THOUGHTS
+  tagline: 留下一些零散记录
+  description: 日常想法与生活片段。
+  cover: /img/columns/thoughts-sketch.jpg
+  tags:
+    - 日记
+    - 随笔

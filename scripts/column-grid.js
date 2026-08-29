@@ -45,17 +45,16 @@ const getPostsForColumn = name => asArray(hexo.locals.get('posts'))
   .filter(post => getCategories(post).some(category => category.name === name))
   .sort((a, b) => new Date(b.date) - new Date(a.date))
 
+const getCategoryDirectory = name => {
+  const mapped = hexo.config.category_map && hexo.config.category_map[name]
+  return `${hexo.config.category_dir || 'categories'}/${mapped || encodeURIComponent(name)}/`
+}
+
 const getCategoryPath = name => {
   const category = asArray(hexo.locals.get('categories')).find(item => item.name === name)
   if (category && category.path) return withRoot(category.path)
 
-  const mapped = hexo.config.category_map && hexo.config.category_map[name]
-  return withRoot(`${hexo.config.category_dir || 'categories'}/${mapped || encodeURIComponent(name)}/`)
-}
-
-const renderColumnTags = tags => {
-  const items = Array.isArray(tags) ? tags : []
-  return items.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')
+  return withRoot(getCategoryDirectory(name))
 }
 
 const renderColumnGrid = () => {
@@ -79,9 +78,8 @@ const renderColumnGrid = () => {
           <span class="column-card-description">${escapeHtml(column.description)}</span>
           <span class="column-card-meta">
             <span><i class="fas fa-book-open" aria-hidden="true"></i>${escapeHtml(countLabel)}</span>
-            <span><i class="far fa-clock" aria-hidden="true"></i>最近更新 ${escapeHtml(latest)}</span>
+            <span><i class="far fa-clock" aria-hidden="true"></i>${posts.length > 0 ? `更新 ${escapeHtml(latest)}` : escapeHtml(latest)}</span>
           </span>
-          <span class="column-card-tags">${renderColumnTags(column.tags)}</span>
         </span>
       </a>`
   }).join('')
@@ -129,7 +127,14 @@ const renderCategoryDetail = page => {
     tags: []
   }
   const posts = asArray(page.posts)
-  const postCards = posts.map(renderPostCard).join('')
+  const postCards = posts.length > 0
+    ? posts.map(renderPostCard).join('')
+    : `
+      <div class="column-empty-state">
+        <span class="column-empty-mark" aria-hidden="true">·</span>
+        <h2>暂时留白</h2>
+        <p>这里还没有文章，之后会慢慢写下去。</p>
+      </div>`
 
   return `
     <section class="column-detail" aria-labelledby="column-detail-title">
@@ -145,11 +150,36 @@ const renderCategoryDetail = page => {
         </div>
       </header>
       <div class="column-detail-intro">${escapeHtml(column.description)}</div>
+      <div class="column-post-heading">
+        <span>文章</span>
+        <span>${posts.length}</span>
+      </div>
       <div class="column-post-list">${postCards}</div>
     </section>`
 }
 
 hexo.extend.tag.register('column_grid', renderColumnGrid)
+
+hexo.extend.generator.register('empty-column-pages', locals => {
+  const existingCategories = new Set(asArray(locals.categories).map(category => category.name))
+  const columns = locals.data && Array.isArray(locals.data.columns)
+    ? locals.data.columns
+    : getColumns()
+
+  return columns
+    .filter(column => !existingCategories.has(column.name))
+    .map(column => ({
+      path: `${getCategoryDirectory(column.name)}index.html`,
+      layout: 'category',
+      data: {
+        title: column.name,
+        category: column.name,
+        type: 'category',
+        aside: false,
+        posts: []
+      }
+    }))
+})
 
 hexo.extend.filter.register('template_locals', locals => {
   if (!locals.page || !locals.page.category) return locals

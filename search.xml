@@ -1,51 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>FIFO笔记</title>
-    <url>/2026/07/20/FIFO%E7%AC%94%E8%AE%B0/</url>
-    <content><![CDATA[同步FIFO的设计和仿真使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count &#x3D;0时FIFO为空，但count &#x3D;DEPTH 时FIFO写满。
-w_ptr与r_ptr 同时也是FIFO存结构的写读地址（区别于异步FIFO里面高位扩充的gray码形式w_ptr和r_ptr）。
-full和empty可以采用组合逻辑判断输出，此时读写和指针移动直接用full和empty信号作为操作判断；如果采用时序输出，需要先引入full_value、empty_value计算结果，在打拍写入full、empty，这时候读写和指针移动用full_value和empty_value信号作为操作判断。
-考虑RAM读写冲突的可能性，读和写在同一地址的情况只有两种，满和空时同时读写。我写的代码时保守型的FIFO，在以上两种情况下对操作的处理分别是只读不写、只写不读，对数据起到充分缓冲。
-
-
-
-
-
-
-
-
-
-
-更加激进的低延时流水操作是
-
-FIFO 为空（empty）时同时读写：写入的数据立即被读（read data &#x3D; write data）。这是一种常见且合法的操作（bypass FIFO）。
-FIFO 为满（full）时同时读写：读操作会腾出一个位置，写操作会填入新数据。(ASIC设计大多是这样)
-普通情况（既不满也不空）：写指针和读指针同时递增，FIFO 占用深度保持不变。
-
-summary: full 时同时读写，full 保持；empty 时同时读写，取决于是否支持 bypass，普通 FIFO 会解除 empty，高性能 FIFO 通常保持 empty。设计核心：
-//读成功rd_fire = rd_en &amp;&amp; (!empty || wr_en_bypass);//写成功wr_fire = wr_en &amp;&amp; (!full || rd_en);//计数逻辑count_next = count + wr_fire - rd_fire;
-
-
-standard mode 和 FWFT mode
-FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增加2
-
-
-
-异步FIFO的设计和仿真
-
-
-]]></content>
-      <categories>
-        <category>数字 IC</category>
-      </categories>
-      <tags>
-        <tag>FIFO</tag>
-        <tag>存储器设计</tag>
-        <tag>RTL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Openlane工具链部署和使用</title>
     <url>/2026/07/17/SOP_Openlane/</url>
     <content><![CDATA[
@@ -212,6 +167,51 @@ runs/run1/logs/
         <tag>Openlane</tag>
         <tag>EDA</tag>
         <tag>后端设计</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>FIFO笔记</title>
+    <url>/2026/07/20/FIFO%E7%AC%94%E8%AE%B0/</url>
+    <content><![CDATA[同步FIFO的设计和仿真使用计数器来判断FIFO的空和满；每次写入时w_ptr 加1，count加1；每次读出时r_ptr 加1，count减1；但count &#x3D;0时FIFO为空，但count &#x3D;DEPTH 时FIFO写满。
+w_ptr与r_ptr 同时也是FIFO存结构的写读地址（区别于异步FIFO里面高位扩充的gray码形式w_ptr和r_ptr）。
+full和empty可以采用组合逻辑判断输出，此时读写和指针移动直接用full和empty信号作为操作判断；如果采用时序输出，需要先引入full_value、empty_value计算结果，在打拍写入full、empty，这时候读写和指针移动用full_value和empty_value信号作为操作判断。
+考虑RAM读写冲突的可能性，读和写在同一地址的情况只有两种，满和空时同时读写。我写的代码时保守型的FIFO，在以上两种情况下对操作的处理分别是只读不写、只写不读，对数据起到充分缓冲。
+
+
+
+
+
+
+
+
+
+
+更加激进的低延时流水操作是
+
+FIFO 为空（empty）时同时读写：写入的数据立即被读（read data &#x3D; write data）。这是一种常见且合法的操作（bypass FIFO）。
+FIFO 为满（full）时同时读写：读操作会腾出一个位置，写操作会填入新数据。(ASIC设计大多是这样)
+普通情况（既不满也不空）：写指针和读指针同时递增，FIFO 占用深度保持不变。
+
+summary: full 时同时读写，full 保持；empty 时同时读写，取决于是否支持 bypass，普通 FIFO 会解除 empty，高性能 FIFO 通常保持 empty。设计核心：
+//读成功rd_fire = rd_en &amp;&amp; (!empty || wr_en_bypass);//写成功wr_fire = wr_en &amp;&amp; (!full || rd_en);//计数逻辑count_next = count + wr_fire - rd_fire;
+
+
+standard mode 和 FWFT mode
+FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增加2
+
+
+
+异步FIFO的设计和仿真
+
+
+]]></content>
+      <categories>
+        <category>数字 IC</category>
+      </categories>
+      <tags>
+        <tag>FIFO</tag>
+        <tag>存储器设计</tag>
+        <tag>RTL</tag>
       </tags>
   </entry>
   <entry>
@@ -470,7 +470,7 @@ Node.js 官方下载页面
 1. MNIST 分类神经网络
 是的，依旧是CNN入门的那个网络，但是训练的时候我们使用BNN
 
-1.1 网络结构MNIST 图像大小为 $28\times28$。输入网络前，图像被拉平成一个长度为 784 的向量：
+1.1 网络结构MNIST 图像大小为 28×2828\times2828×28。输入网络前，图像被拉平成一个长度为 784 的向量：
 28 × 28 灰度图像        ↓ 展平并二值化784 维输入        ↓ BinaryLinear(784, 128) + BN + Sign128 维二值激活        ↓ BinaryLinear(128, 64) + BN + Sign64 维二值激活        ↓ BinaryLinear(64, 10)10 个类别分数        ↓ Argmax预测数字 0～9
 
 对应的网络结构为：
@@ -504,10 +504,12 @@ Argmax
 
 1.2 功能每个隐藏层都由三个步骤组成：
 BinaryLinear完成输入与权重的点积。以第一层为例，它包含128个神经元。每个神经元都接收同一张图像的784个输入，但拥有自己的一组784维权重，最终产生1个输出。因此第一层可以理解为同时计算128个点积：
-$$S_j&#x3D;\sum_{i&#x3D;0}^{783}a_iw_{j,i},\qquad j&#x3D;0,1,\ldots,127$$
-其中 $a_i$ 是输入激活，$w_{j,i}$ 是第 $j$ 个神经元的权重。第二层重复相同过程，把128维输入转换成64维；输出层再计算10个分数，分别对应数字0到9。
+Sj=∑i=0783aiwj,i,j=0,1,…,127S_j=\sum_{i=0}^{783}a_iw_{j,i},\qquad j=0,1,\ldots,127Sj​=i=0∑783​ai​wj,i​,j=0,1,…,127
+
+其中 aia_iai​ 是输入激活，wj,iw_{j,i}wj,i​ 是第 jjj 个神经元的权重。第二层重复相同过程，把128维输入转换成64维；输出层再计算10个分数，分别对应数字0到9。
 BatchNorm利用训练得到的均值、方差、缩放和偏移调整点积结果：
-$$y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta$$
+y=γS−μvar+ε+βy=\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\betay=γvar+ε​S−μ​+β
+
 这个公式对每个神经元分别计算，各参数含义如下：
 
 
@@ -518,50 +520,50 @@ $$y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta$$
 
 
 
-$S$
+SSS
 BinaryLinear 输出的点积结果
 不是BN参数
 
 
-$\mu$
-$S$ 的均值
+μ\muμ
+SSS 的均值
 批次统计量或累计统计量
 
 
-$\mathrm{var}$
-$S$ 的方差
+var\mathrm{var}var
+SSS 的方差
 批次统计量或累计统计量
 
 
-$\gamma$
+γ\gammaγ
 可学习的缩放系数
 是
 
 
-$\beta$
+β\betaβ
 可学习的平移系数
 是
 
 
-$\varepsilon$
-防止除零的固定小量，默认 $10^{-5}$
+ε\varepsilonε
+防止除零的固定小量，默认 10−510^{-5}10−5
 否
 
 
-其中 $\gamma$ 和 $\beta$ 与普通权重一样由优化器更新；均值和方差不是通过反向传播学习的，而是由每一批数据统计得到。训练和推理阶段具体使用哪一组均值、方差，将在3.2和3.3节说明。
+其中 γ\gammaγ 和 β\betaβ 与普通权重一样由优化器更新；均值和方差不是通过反向传播学习的，而是由每一批数据统计得到。训练和推理阶段具体使用哪一组均值、方差，将在3.2和3.3节说明。
 Sign结果大于等于0时输出 +1，否则输出 -1。
 因此，隐藏层虽然会计算一个数值点积，但传给下一层的仍然是二值激活。
 输出层没有BN和Sign，用Argmax选择最大分数对应的类别。
 2. 核心数学原理BNN可以把隐藏层简化成三步：
 二值乘法 → XNOR有符号累加 → PopcountBatchNorm + Sign → Threshold Compare
 
-2.1 XNOR 代替二值乘法对任意一对二值数 $a_i,w_i\in{-1,+1}$：
+2.1 XNOR 代替二值乘法对任意一对二值数 ai,wi∈{−1,+1}a_i,w_i\in{-1,+1}ai​,wi​∈{−1,+1}：
 
 
 
-$a_i$
-$w_i$
-$a_iw_i$
+aia_iai​
+wiw_iwi​
+aiwia_iw_iai​wi​
 比特编码
 XNOR
 
@@ -599,35 +601,42 @@ XNOR
 xnor_bits = ~(activation ^ weight);
 
 这里不再需要DSP乘法器，只需要逐位逻辑运算。
-2.2 Popcount 还原点积XNOR只告诉我们哪些位置同号，还需要把结果累加。假设输入长度为 $N$，XNOR结果中有 $P$ 个1：
+2.2 Popcount 还原点积XNOR只告诉我们哪些位置同号，还需要把结果累加。假设输入长度为 NNN，XNOR结果中有 PPP 个1：
 
-$P$ 个位置同号，对点积贡献 $+1$；
-$N-P$ 个位置异号，对点积贡献 $-1$。
+PPP 个位置同号，对点积贡献 +1+1+1；
+N−PN-PN−P 个位置异号，对点积贡献 −1-1−1。
 
 因此原始点积为：
-$$S&#x3D;P-(N-P)&#x3D;2P-N$$
-这里的 $P$ 就是对XNOR结果进行Popcount得到的1的数量。
+S=P−(N−P)=2P−NS=P-(N-P)=2P-NS=P−(N−P)=2P−N
+
+这里的 PPP 就是对XNOR结果进行Popcount得到的1的数量。
 例如：
 activation : +1  -1  +1  +1  -1  -1  +1  +1weight     : +1  +1  -1  +1  -1  +1  +1  +1XNOR bits  :  1   0   0   1   1   0   1   1
 
-共有 $P&#x3D;5$ 个位置相同，$N&#x3D;8$，所以：
-$$S&#x3D;2\times5-8&#x3D;2$$
+共有 P&#x3D;5P&#x3D;5P&#x3D;5 个位置相同，N&#x3D;8N&#x3D;8N&#x3D;8，所以：
+S=2×5−8=2S=2\times5-8=2S=2×5−8=2
+
 至此，“8次乘法加累加”就变成了“8位XNOR加一次Popcount”。
 2.3 BN 和 Sign 折叠成整数阈值Popcount可以恢复点积，但隐藏层后面还有BN和Sign。推理时BN为：
-$$y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta$$
-Sign只关心 $y$ 是否大于等于0。令：
-$$\hat{\sigma}&#x3D;\sqrt{\mathrm{var}+\varepsilon}$$
-由 $y\geq0$ 可以求出点积阈值：
-$$S_{thr}&#x3D;\mu-\frac{\beta\hat{\sigma}}{\gamma}$$
-再代入 $S&#x3D;2P-N$：
+y=γS−μvar+ε+βy=\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\betay=γvar+ε​S−μ​+β
 
-当 $\gamma&gt;0$ 时，不等号方向不变：
+Sign只关心 yyy 是否大于等于0。令：
+σ^=var+ε\hat{\sigma}=\sqrt{\mathrm{var}+\varepsilon}σ^=var+ε​
 
-$$P\geq\left\lceil\frac{S_{thr}+N}{2}\right\rceil$$
+由 y≥0y\geq0y≥0 可以求出点积阈值：
+Sthr=μ−βσ^γS_{thr}=\mu-\frac{\beta\hat{\sigma}}{\gamma}Sthr​=μ−γβσ^​
 
-当 $\gamma&lt;0$ 时，不等号方向反转：
+再代入 S&#x3D;2P−NS&#x3D;2P-NS&#x3D;2P−N：
 
-$$P\leq\left\lfloor\frac{S_{thr}+N}{2}\right\rfloor$$
+当 γ&gt;0\gamma&gt;0γ&gt;0 时，不等号方向不变：
+
+P≥⌈Sthr+N2⌉P\geq\left\lceil\frac{S_{thr}+N}{2}\right\rceilP≥⌈2Sthr​+N​⌉
+
+
+当 γ&lt;0\gamma&lt;0γ&lt;0 时，不等号方向反转：
+
+P≤⌊Sthr+N2⌋P\leq\left\lfloor\frac{S_{thr}+N}{2}\right\rfloorP≤⌊2Sthr​+N​⌋
+
 所以每个隐藏层神经元只需导出一个整数阈值 T 和一个方向位 flip：
 binary_out = flip ? (popcount_in &lt;= threshold)                  : (popcount_in &gt;= threshold);
 
@@ -641,10 +650,13 @@ XNOR → Popcount → 整数阈值比较
 2.4 输出层只需要 Argmax
 Tips： 输出层没有 BN 和 Sign。
 
-第 $c$ 个类别的分数仍满足：
-$$S_c&#x3D;2P_c-N$$
-因为10个类别的 $N$ 相同，乘2和减去相同常数不会改变大小顺序：
-$$\operatorname*{argmax}_c S_c&#x3D;\operatorname*{argmax}_c P_c$$
+第 ccc 个类别的分数仍满足：
+Sc=2Pc−NS_c=2P_c-NSc​=2Pc​−N
+
+因为10个类别的 NNN 相同，乘2和减去相同常数不会改变大小顺序：
+argmax⁡cSc=argmax⁡cPc\operatorname*{argmax}_c S_c
+=\operatorname*{argmax}_c P_ccargmax​Sc​=cargmax​Pc​
+
 因此硬件直接对10个Popcount取最大值即可，不需要Softmax，也不存在“负指数归一化”。
 3. 网络训练和权重导出3.1 构建网络训练代码按照 784 → 128 → 64 → 10 构建三层网络。Linear层不使用bias，两个隐藏层各自连接BN和Sign，输出层直接输出10个logit。
 输入图像先按 pixel &gt; 0.5 二值化：
@@ -683,9 +695,13 @@ w_bin = sign(w_real)
 一次隐藏层前向传播可以更准确地写成：
 二值输入 (+1/-1)  → 与 w_bin (+1/-1) 做 BinaryLinear  → 得到点积 S  → BN 输出临时浮点值 y  → Sign 再变回 +1/-1
 
-训练时BN使用当前mini-batch的均值 $\mu_B$ 和方差 $\mathrm{var}_B$ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 momentum=0.1，每处理一批就执行：
-$$\mathrm{running\_mean}_{new}&#x3D;0.9\,\mathrm{running\_mean}_{old}+0.1\,\mu_B$$
-$$\mathrm{running\_var}_{new}\approx0.9\,\mathrm{running\_var}_{old}+0.1\,\mathrm{var}_B$$
+训练时BN使用当前mini-batch的均值 μB\mu_BμB​ 和方差 varB\mathrm{var}_BvarB​ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 momentum=0.1，每处理一批就执行：
+running_meannew=0.9 running_meanold+0.1 μB\mathrm{running\_mean}_{new}
+=0.9\,\mathrm{running\_mean}_{old}+0.1\,\mu_Brunning_meannew​=0.9running_meanold​+0.1μB​
+
+running_varnew≈0.9 running_varold+0.1 varB\mathrm{running\_var}_{new}
+\approx0.9\,\mathrm{running\_var}_{old}+0.1\,\mathrm{var}_Brunning_varnew​≈0.9running_varold​+0.1varB​
+
 这里的0.9和0.1是指数移动平均，不是“直接采用新统计量”：旧统计量保留90%，当前批次贡献10%，从而减小单个批次波动带来的影响。
 当前训练配置为：
 
@@ -713,7 +729,7 @@ Adam
 
 
 初始学习率
-$3\times10^{-3}$
+3×10−33\times10^{-3}3×10−3
 
 
 学习率策略
@@ -728,10 +744,10 @@ CrossEntropyLoss
 
 当前脚本直接根据测试集准确率保存最佳模型。更严格的实验应从训练集划分验证集，只在最后使用一次测试集。
 
-3.3 导出权重和阈值训练阶段执行 model.train() 时，BN使用当前批次的 $\mu_B$ 和 $\mathrm{var}_B$，并按前面的 0.9 × 旧值 + 0.1 × 当前值 更新 running_mean 和 running_var。
+3.3 导出权重和阈值训练阶段执行 model.train() 时，BN使用当前批次的 μB\mu_BμB​ 和 varB\mathrm{var}_BvarB​，并按前面的 0.9 × 旧值 + 0.1 × 当前值 更新 running_mean 和 running_var。
 导出和推理前执行 model.eval() 后，BN停止更新，也不再使用当前输入批次的统计量，而是固定使用训练结束时保存的：
 running_meanrunning_var
-model.eval() 不会重新计算统计量，也不会把BN变成整数；它只是把BN从“使用当前批次统计量”切换为“使用训练阶段累计统计量”。导出脚本再读取这些固定的 running_mean、running_var 以及 $\gamma$、$\beta$，计算每个神经元的整数阈值。
+model.eval() 不会重新计算统计量，也不会把BN变成整数；它只是把BN从“使用当前批次统计量”切换为“使用训练阶段累计统计量”。导出脚本再读取这些固定的 running_mean、running_var 以及 γ\gammaγ、β\betaβ，计算每个神经元的整数阈值。
 随后完成三件事：
 
 对三层浮点主权重 w_real 取Sign，得到真正部署的 +1/-1 权重，再编码为1&#x2F;0，生成 w1.mem、w2.mem、w3.mem；
@@ -798,7 +814,8 @@ Golden agreement：RTL与整数参考模型是否逐张一致。
 
 group_idx 决定当前选择哪一组权重，16个PE并行计算当前组，并把结果写入128-bit输出寄存器。8组完成后拉高 done，顶层状态机再启动第二层。
 第二层需要4组，输出层需要1组，所以核心计算量为：
-$$8+4+1&#x3D;13\text{个分组计算拍}$$
+8+4+1=13个分组计算拍8+4+1=13\text{个分组计算拍}8+4+1=13个分组计算拍
+
 当前控制还包含启动和层间 start/done 交接周期。各层串行执行，也没有让多张图片重叠进入流水线。因此，这个版本的目标首先是验证“用时间换面积”，而不是追求最高吞吐率。
 当前综合版本仍然采用固定模型：生成脚本把权重写进 case(group_idx) 和 localparam。它已经实现了PE时分复用，但还不是从BRAM动态读取、可以随时切换权重的通用神经网络加速器。
 5.3 Vivado 结果测试器件为 XC7A200T-2FBV484，Vivado 2018.1，时钟约束为100 MHz。由于顶层直接暴露784-bit图像输入，PPA分析采用OOC模式，只考察计算核心，不代表最终板级I&#x2F;O设计。
@@ -844,7 +861,8 @@ Routed WNS -4.720 ns
 
 与全展开版相比，PE复用版的LUT减少约 76.7%。30,423条需要路由的网络全部完成路由，routing error为0。这说明PE复用确实解决了主要的资源密度和拥塞问题。
 但路由成功不等于100 MHz时序已经通过。当前最差路径约14.41 ns，其中约73%来自布线延迟。根据WNS粗略估算，当前频率上限约为：
-$$f_{max}\approx\frac{1}{10\text{ ns}+4.720\text{ ns}}\approx67.9\text{ MHz}$$
+fmax≈110 ns+4.720 ns≈67.9 MHzf_{max}\approx\frac{1}{10\text{ ns}+4.720\text{ ns}}\approx67.9\text{ MHz}fmax​≈10 ns+4.720 ns1​≈67.9 MHz
+
 功能验证方面，PE复用版已完成100张阶段性RTL回归，准确率为 97&#x2F;100，与Golden Reference 100&#x2F;100一致。Testbench可以继续扩展到完整的1,000张导出测试集。
 6. 总结回到最开始的神经网络，它原本逐层执行点积、BN和激活；在二值条件下，这些运算可以依次变成XNOR、Popcount和整数阈值比较，输出层再直接对Popcount做Argmax。这个变换是由 +1/-1 编码和BN不等式严格推导出来的。
 全展开证明了算法能够直接映射成电路，PE复用最终解决了资源和路由问题。这个MNIST网络很小，单独部署没有明显实际价值，但同样的XNOR-Popcount PE可以继续用于更大的全连接层或二值卷积网络，这才是这种结构更有意义的应用方向。

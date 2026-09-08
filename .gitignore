@@ -7,3 +7,6 @@ public/
 .deploy*/
 _multiconfig.yml
 .claude/settings.local.json
+
+# Local writing template (copy it into source/_posts/ before publishing)
+/想法文章模板.md

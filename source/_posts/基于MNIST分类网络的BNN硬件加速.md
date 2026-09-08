@@ -2,7 +2,7 @@
 title: 基于MNIST分类网络的BNN硬件加速
 date: 2026-09-06
 aside: false
-mathjax: true
+katex: true
 description: 。
 cover: /img/columns/bnn_mnist.jpg
 tags:
@@ -273,13 +273,13 @@ Sign几乎处处不可导，因此训练时使用STE（Straight-Through Estimato
 训练时BN使用当前mini-batch的均值 $\mu_B$ 和方差 $\mathrm{var}_B$ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 `momentum=0.1`，每处理一批就执行：
 
 $$
-\mathrm{running\\_mean}\_{new}
-=0.9\\,\mathrm{running\\_mean}\_{old}+0.1\\,\mu_B
+\mathrm{running\_mean}_{new}
+=0.9\,\mathrm{running\_mean}_{old}+0.1\,\mu_B
 $$
 
 $$
-\mathrm{running\\_var}\_{new}
-\approx0.9\\,\mathrm{running\\_var}\_{old}+0.1\\,\mathrm{var}_B
+\mathrm{running\_var}_{new}
+\approx0.9\,\mathrm{running\_var}_{old}+0.1\,\mathrm{var}_B
 $$
 
 这里的0.9和0.1是指数移动平均，不是“直接采用新统计量”：旧统计量保留90%，当前批次贡献10%，从而减小单个批次波动带来的影响。

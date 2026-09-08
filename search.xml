@@ -684,8 +684,8 @@ w_bin = sign(w_real)
 二值输入 (+1/-1)  → 与 w_bin (+1/-1) 做 BinaryLinear  → 得到点积 S  → BN 输出临时浮点值 y  → Sign 再变回 +1/-1
 
 训练时BN使用当前mini-batch的均值 $\mu_B$ 和方差 $\mathrm{var}_B$ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 momentum=0.1，每处理一批就执行：
-$$\mathrm{running_mean}{new}&#x3D;0.9,\mathrm{running_mean}{old}+0.1,\mu_B$$
-$$\mathrm{running_var}{new}\approx0.9,\mathrm{running_var}{old}+0.1,\mathrm{var}_B$$
+$$\mathrm{running\_mean}_{new}&#x3D;0.9\,\mathrm{running\_mean}_{old}+0.1\,\mu_B$$
+$$\mathrm{running\_var}_{new}\approx0.9\,\mathrm{running\_var}_{old}+0.1\,\mathrm{var}_B$$
 这里的0.9和0.1是指数移动平均，不是“直接采用新统计量”：旧统计量保留90%，当前批次贡献10%，从而减小单个批次波动带来的影响。
 当前训练配置为：
 

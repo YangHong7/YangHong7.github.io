@@ -46,175 +46,6 @@ FWFT模式空满信号延时两个周期，IP设置深度是实际大小会增�
       </tags>
   </entry>
   <entry>
-    <title>Openlane工具链部署和使用</title>
-    <url>/2026/07/17/SOP_Openlane/</url>
-    <content><![CDATA[
-SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程
-文档说明：本指南涵盖从 Windows 11 环境准备、Docker 容器搭建、开源 EDA 工具链激活，到 RTL 逻辑综合（Yosys）、静态时序分析（OpenSTA）以及数字后端布局布线（OpenLane）的完整实操流程。
-
-
-目录
-第一阶段：搭建 Windows + WSL2 环境
-第二阶段：OpenLane 仓库克隆与 Docker 启动
-第三阶段：数字前端流程 (Synthesis &amp; STA &amp; GLS)
-第四阶段：数字后端流程 (P&amp;R)
-第五阶段：设计产物与验收
-附录：前端运行脚本与配置文件详解
-
-
-第一阶段：搭建 Windows + WSL2 环境一、 准备工程目录结构在 Windows 本地磁盘（如 D: 盘）建立标准化项目目录。该目录后续将直接挂载至 Docker 容器内的 /work 目录：
-D:\IC\risc_practice\phase3\           &lt;-- 对应容器内的 /work├── config.json                       # OpenLane 后端 P&amp;R 配置文件├── rtl/                              # 1. RTL 源代码目录 (*.v / *.sv)├── syn/                              # 2. 逻辑综合脚本 (synth.tcl)├── sta/                              # 3. STA 约束与分析脚本 (sta.sdc, sta.tcl)└── rep/                              # 4. 终极产物与报告输出目录 (网表, 报告)
-
-二、 开启 WSL2 (Ubuntu)在 Windows 11 中开启 WSL2 支持。打开 PowerShell 验证版本：
-wsl -l -v
-
-
-要求：确保指定的 Linux 发行版（如 Ubuntu）的 VERSION 显示为 2。
-
-三、 配置 Docker Desktop
-下载并安装 Docker Desktop，全程保持默认设置。
-确保勾选 Use WSL 2 instead of Hyper-V (recommended)。
-打开 Docker Desktop 设置界面，开启 WSL 深度集成 (WSL Integration)，勾选对应的 Ubuntu 发行版。
-
-
-第二阶段：OpenLane 仓库克隆与 Docker 启动四、 克隆 OpenLane 仓库进入 WSL2 Linux 环境的 home 目录下拉取 OpenLane 官方仓库：
-cd ~git clone https://github.com/The-OpenROAD-Project/OpenLane.gitcd OpenLanemake   # Makefile 会自动下载官方 Docker 镜像并配置 Volare PDK 管理工具
-注意不要在&#x2F;mnt下运行，读写会有一堆问题
-OpenLane 内置开源 EDA 工具链概览
-
-
-工具名称
-核心用途
-说明
-
-
-
-Yosys
-逻辑综合
-将 RTL 代码转化为门级网表 (Gate-Level Netlist)
-
-
-OpenSTA
-静态时序分析
-计算 Slack、最大时钟频率 ($f_{max}$)，定位关键路径
-
-
-OpenROAD
-后端布局布线
-包含 Floorplan、Placement、CTS、Routing 等全套子工具
-
-
-KLayout
-版图查看
-查看与导出 GDSII 版图文件
-
-
-Volare
-PDK 版本管理
-自动化管理与切换 SkyWater 130nm 等开源 PDK
-
-
-五、 启动容器并激活 Sky130 PDK使用 PowerShell 将本地工程挂载到容器 /work 目录，并激活指定的 Sky130 PDK 版本：
-# 1. 启动容器并挂载本地目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latest# 2. 激活 Sky130 PDK 版本docker exec sta_analysis volare enable --pdk sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
-
-
-第三阶段：数字前端流程六、 逻辑综合 (Yosys)运行 Yosys 自动化综合脚本，生成门级网表：
-docker exec -it sta_analysis yosys -s /work/syn/synth.tcl
-
-七、 静态时序分析 (OpenSTA)运行 OpenSTA 检查建立&#x2F;保持时间裕量 (Setup&#x2F;Hold Slack) 与功耗报告：
-docker exec -it sta_analysis sta /work/sta/sta.tcl
-
-八、 门级仿真 (GLS)将综合后生成的 synth.v 网表、晶体管仿真模型 sky130.v 与 Testbench 一起进行门级功能验证。
-
-第四阶段：数字后端流程 (P&amp;R)九、 运行 OpenLane 交互式后端流程Step 1: 进入容器 Bash 终端docker exec -it sta_analysis bash
-
-Step 2: 进入 OpenLane 运行目录cd /openlane
-
-技巧：若路径不正确，可执行 find / -name &quot;flow.tcl&quot; 2&gt;/dev/null 查找。
-
-Step 3: 启动 OpenLane 交互界面./flow.tcl -interactive# 控制台提示符变为 %，表示成功进入 OpenLane Tcl 环境
-
-Step 4: 依次执行后端设计步骤在 % 提示符下逐行运行：
-package require openlane                     ;# 1. 加载 OpenLane 自动化包prep -design /work -tag run1 -overwrite      ;# 2. 载入 config.json 项目配置环境run_synthesis                                ;# 3. 运行后端标准化综合run_floorplan                                ;# 4. 楼层规划 (画 Die 面积与电源网格 PDN)run_placement                                ;# 5. 标准单元布局 (放置标准门电路)run_cts                                      ;# 6. 时钟树综合 (插入 Clock Buffer 优化 Clock Tree)run_routing                                  ;# 7. 详细布线 (耗时最久，查看 logs/routing/25-detailed.log)run_magic                                    ;# 8. DRC 版图检查与导出 GDSII 文件
-
-
-第五阶段：设计产物与验收设计运行完成后，核心成果将输出在本地目录的 rep/ 及 runs/ 中：
-前后端核心产物清单
-
-
-类别
-文件路径
-文件说明
-
-
-
-前端产物
-rep/synth.v
-逻辑综合后生成的门级网表文件
-
-
-
-rep/sta_setup.rpt
-Max Path Setup 时序分析报告（查看 Slack 裕量）
-
-
-
-rep/power.rpt
-芯片功耗估算报告
-
-
-后端产物
-runs/run1/results/signoff/open_risc_v.gds
-终极版图文件 (GDSII)
-
-
-
-runs/run1/results/placement/
-布局后的 DEF 文件目录
-
-
-
-runs/run1/logs/
-各阶段详细运行 Log 日志（按 Step 序号排列）
-
-
-
-附录：前端运行脚本与配置文件示例一、 编写 Yosys 综合脚本 (syn/synth.tcl)# 1. 读取所有 RTL 源代码文件（根据依赖顺序，defines.v 优先）read_verilog -sv -I/work/rtl /work/rtl/defines.vread_verilog -sv -I/work/rtl /work/rtl/ifetch.vread_verilog -sv -I/work/rtl /work/rtl/if_id.vread_verilog -sv -I/work/rtl /work/rtl/id.vread_verilog -sv -I/work/rtl /work/rtl/id_ex.vread_verilog -sv -I/work/rtl /work/rtl/ex.vread_verilog -sv -I/work/rtl /work/rtl/pc_reg.vread_verilog -sv -I/work/rtl /work/rtl/regs.vread_verilog -sv -I/work/rtl /work/rtl/ram.vread_verilog -sv -I/work/rtl /work/rtl/rom.vread_verilog -sv -I/work/rtl /work/rtl/simple_dual_ram.vread_verilog -sv -I/work/rtl /work/rtl/riscv_top.vread_verilog -sv -I/work/rtl /work/rtl/open_risc_v_soc.v# 2. 顶层层次检查与过程块展开 (-top 后接顶层模块名)hierarchy -check -top open_risc_vprocopt# 3. 将 Memory 拆解为标准 DFF (防止 Regfile 无法映射到标准门)memory_dffmemory_mapopt# 4. 解锁带 Enable 使能端的 DFF 为 MUX + 普通 DFFtechmapopt# 5. 映射 DFF 到 Sky130 工艺库 (精准映射带低电平异步复位的 DFF)dfflegalize -cell $_DFF_PN0_ 0 -cell $_DFF_P_ 0 -cell $_DFF_PP0_ 0dfflibmap -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib# 6. 映射组合逻辑abc -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.libopt_clean -purge# 7. 清除属性并导出网表write_verilog -noattr /work/rep/synth.v
-
-
-综合注意事项：
-
-头文件顺序：defines.v 等宏定义文件必须排在最前方。
-消除抽象门&#x2F;Latch：必须使用 memory_dff 和 memory_map。若未正确映射，网表中会残留 $_DLATCH_N_ 或 $_DFF_PN0_ 等抽象器件，导致后续 OpenSTA 时序分析直接崩溃。
-网表质量自检：综合完成后，建议在 PowerShell 中搜索生成的网表，确保输出为 0 行结果：Select-String -Path &quot;D:\IC\risc_practice\phase3\rep\synth.v&quot; -Pattern &quot;always&quot;Select-String -Path &quot;D:\IC\risc_practice\phase3\rep\synth.v&quot; -Pattern &quot;\$_&quot;
-
-
-
-二、 编写 STA 时序约束文件 (sta/sta.sdc)# 1. 定义主时钟 clk，周期设为 10.0 ns (对应 100MHz 目标频率)create_clock -name clk -period 10.0 [get_ports clk]# 2. 设置输入延迟 (排除 clk 端口本身，避免 Warning)set_input_delay 2.0 -clock clk [get_ports * -filter &quot;direction == input &amp;&amp; name != clk&quot;]# 3. 设置输出延迟set_output_delay 2.0 -clock clk [all_outputs]
-
-
-三、 编写 OpenSTA 分析脚本 (sta/sta.tcl)# 1. 读入 Sky130 物理时序库 (.lib)read_liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib# 2. 读入综合门级网表read_verilog /work/rep/synth.v# 3. 绑定顶层模块link_design open_risc_v# 4. 读入 SDC 约束文件read_sdc /work/sta/sta.sdc# 5. 输出 Setup / Hold 时序报告与功耗报告至 rep/ 目录report_checks -path_delay max -format full_clock_expanded -digits 4 &gt; /work/rep/sta_setup.rptreport_checks -path_delay min -format full_clock_expanded -digits 4 &gt; /work/rep/sta_hold.rptreport_power &gt; /work/rep/power.rptexit
-
-
-四、 编写 OpenLane 后端配置文件 (config.json)&#123;    &quot;DESIGN_NAME&quot;: &quot;open_risc_v&quot;,    &quot;VERILOG_FILES&quot;: [        &quot;dir::rtl/defines.v&quot;,        &quot;dir::rtl/open_risc_v_soc.v&quot;    ],    &quot;CLOCK_PORT&quot;: &quot;clk&quot;,    &quot;CLOCK_PERIOD&quot;: 10.0,    &quot;FP_CORE_UTIL&quot;: 40,    &quot;PL_TARGET_DENSITY&quot;: 0.45,    &quot;FP_PDN_MULTILAYER&quot;: true&#125;
-
-
-参数说明：FP_CORE_UTIL: 40 代表逻辑单元占用芯片 Core 面积的 40%，预留 60% 空间供金属线网布线，可有效规避后端 Routing 拥塞 (Congestion)。
-
-
-五、 常用容器运维指令在 Windows PowerShell 中执行的日常容器维护命令：
-# 1. 查看所有容器状态 (包括运行中与暂停的)docker ps -a# 2. 启动已休眠的容器docker start sta_analysis# 3. 进入运行中的容器 Bashdocker exec -it sta_analysis bash# 4. 停止并删除容器docker stop sta_analysisdocker rm sta_analysis# 5. 一键重新创建容器并挂载工程目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latestdocker exec sta_analysis volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b
-]]></content>
-      <categories>
-        <category>数字 IC</category>
-      </categories>
-      <tags>
-        <tag>Openlane</tag>
-        <tag>EDA</tag>
-        <tag>后端设计</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Claude Code Best (CCB) 本地部署与使用</title>
     <url>/2026/07/25/claude-code-best%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97/</url>
     <content><![CDATA[
@@ -458,6 +289,572 @@ Node.js 官方下载页面
         <tag>CCB</tag>
         <tag>AI 工具</tag>
         <tag>开发环境</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Openlane工具链部署和使用</title>
+    <url>/2026/07/17/SOP_Openlane/</url>
+    <content><![CDATA[
+SOP：WSL2 + Docker 搭建 OpenLane 数字芯片综合与 STA 流程
+文档说明：本指南涵盖从 Windows 11 环境准备、Docker 容器搭建、开源 EDA 工具链激活，到 RTL 逻辑综合（Yosys）、静态时序分析（OpenSTA）以及数字后端布局布线（OpenLane）的完整实操流程。
+
+
+目录
+第一阶段：搭建 Windows + WSL2 环境
+第二阶段：OpenLane 仓库克隆与 Docker 启动
+第三阶段：数字前端流程 (Synthesis &amp; STA &amp; GLS)
+第四阶段：数字后端流程 (P&amp;R)
+第五阶段：设计产物与验收
+附录：前端运行脚本与配置文件详解
+
+
+第一阶段：搭建 Windows + WSL2 环境一、 准备工程目录结构在 Windows 本地磁盘（如 D: 盘）建立标准化项目目录。该目录后续将直接挂载至 Docker 容器内的 /work 目录：
+D:\IC\risc_practice\phase3\           &lt;-- 对应容器内的 /work├── config.json                       # OpenLane 后端 P&amp;R 配置文件├── rtl/                              # 1. RTL 源代码目录 (*.v / *.sv)├── syn/                              # 2. 逻辑综合脚本 (synth.tcl)├── sta/                              # 3. STA 约束与分析脚本 (sta.sdc, sta.tcl)└── rep/                              # 4. 终极产物与报告输出目录 (网表, 报告)
+
+二、 开启 WSL2 (Ubuntu)在 Windows 11 中开启 WSL2 支持。打开 PowerShell 验证版本：
+wsl -l -v
+
+
+要求：确保指定的 Linux 发行版（如 Ubuntu）的 VERSION 显示为 2。
+
+三、 配置 Docker Desktop
+下载并安装 Docker Desktop，全程保持默认设置。
+确保勾选 Use WSL 2 instead of Hyper-V (recommended)。
+打开 Docker Desktop 设置界面，开启 WSL 深度集成 (WSL Integration)，勾选对应的 Ubuntu 发行版。
+
+
+第二阶段：OpenLane 仓库克隆与 Docker 启动四、 克隆 OpenLane 仓库进入 WSL2 Linux 环境的 home 目录下拉取 OpenLane 官方仓库：
+cd ~git clone https://github.com/The-OpenROAD-Project/OpenLane.gitcd OpenLanemake   # Makefile 会自动下载官方 Docker 镜像并配置 Volare PDK 管理工具
+注意不要在&#x2F;mnt下运行，读写会有一堆问题
+OpenLane 内置开源 EDA 工具链概览
+
+
+工具名称
+核心用途
+说明
+
+
+
+Yosys
+逻辑综合
+将 RTL 代码转化为门级网表 (Gate-Level Netlist)
+
+
+OpenSTA
+静态时序分析
+计算 Slack、最大时钟频率 ($f_{max}$)，定位关键路径
+
+
+OpenROAD
+后端布局布线
+包含 Floorplan、Placement、CTS、Routing 等全套子工具
+
+
+KLayout
+版图查看
+查看与导出 GDSII 版图文件
+
+
+Volare
+PDK 版本管理
+自动化管理与切换 SkyWater 130nm 等开源 PDK
+
+
+五、 启动容器并激活 Sky130 PDK使用 PowerShell 将本地工程挂载到容器 /work 目录，并激活指定的 Sky130 PDK 版本：
+# 1. 启动容器并挂载本地目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latest# 2. 激活 Sky130 PDK 版本docker exec sta_analysis volare enable --pdk sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+
+
+第三阶段：数字前端流程六、 逻辑综合 (Yosys)运行 Yosys 自动化综合脚本，生成门级网表：
+docker exec -it sta_analysis yosys -s /work/syn/synth.tcl
+
+七、 静态时序分析 (OpenSTA)运行 OpenSTA 检查建立&#x2F;保持时间裕量 (Setup&#x2F;Hold Slack) 与功耗报告：
+docker exec -it sta_analysis sta /work/sta/sta.tcl
+
+八、 门级仿真 (GLS)将综合后生成的 synth.v 网表、晶体管仿真模型 sky130.v 与 Testbench 一起进行门级功能验证。
+
+第四阶段：数字后端流程 (P&amp;R)九、 运行 OpenLane 交互式后端流程Step 1: 进入容器 Bash 终端docker exec -it sta_analysis bash
+
+Step 2: 进入 OpenLane 运行目录cd /openlane
+
+技巧：若路径不正确，可执行 find / -name &quot;flow.tcl&quot; 2&gt;/dev/null 查找。
+
+Step 3: 启动 OpenLane 交互界面./flow.tcl -interactive# 控制台提示符变为 %，表示成功进入 OpenLane Tcl 环境
+
+Step 4: 依次执行后端设计步骤在 % 提示符下逐行运行：
+package require openlane                     ;# 1. 加载 OpenLane 自动化包prep -design /work -tag run1 -overwrite      ;# 2. 载入 config.json 项目配置环境run_synthesis                                ;# 3. 运行后端标准化综合run_floorplan                                ;# 4. 楼层规划 (画 Die 面积与电源网格 PDN)run_placement                                ;# 5. 标准单元布局 (放置标准门电路)run_cts                                      ;# 6. 时钟树综合 (插入 Clock Buffer 优化 Clock Tree)run_routing                                  ;# 7. 详细布线 (耗时最久，查看 logs/routing/25-detailed.log)run_magic                                    ;# 8. DRC 版图检查与导出 GDSII 文件
+
+
+第五阶段：设计产物与验收设计运行完成后，核心成果将输出在本地目录的 rep/ 及 runs/ 中：
+前后端核心产物清单
+
+
+类别
+文件路径
+文件说明
+
+
+
+前端产物
+rep/synth.v
+逻辑综合后生成的门级网表文件
+
+
+
+rep/sta_setup.rpt
+Max Path Setup 时序分析报告（查看 Slack 裕量）
+
+
+
+rep/power.rpt
+芯片功耗估算报告
+
+
+后端产物
+runs/run1/results/signoff/open_risc_v.gds
+终极版图文件 (GDSII)
+
+
+
+runs/run1/results/placement/
+布局后的 DEF 文件目录
+
+
+
+runs/run1/logs/
+各阶段详细运行 Log 日志（按 Step 序号排列）
+
+
+
+附录：前端运行脚本与配置文件示例一、 编写 Yosys 综合脚本 (syn/synth.tcl)# 1. 读取所有 RTL 源代码文件（根据依赖顺序，defines.v 优先）read_verilog -sv -I/work/rtl /work/rtl/defines.vread_verilog -sv -I/work/rtl /work/rtl/ifetch.vread_verilog -sv -I/work/rtl /work/rtl/if_id.vread_verilog -sv -I/work/rtl /work/rtl/id.vread_verilog -sv -I/work/rtl /work/rtl/id_ex.vread_verilog -sv -I/work/rtl /work/rtl/ex.vread_verilog -sv -I/work/rtl /work/rtl/pc_reg.vread_verilog -sv -I/work/rtl /work/rtl/regs.vread_verilog -sv -I/work/rtl /work/rtl/ram.vread_verilog -sv -I/work/rtl /work/rtl/rom.vread_verilog -sv -I/work/rtl /work/rtl/simple_dual_ram.vread_verilog -sv -I/work/rtl /work/rtl/riscv_top.vread_verilog -sv -I/work/rtl /work/rtl/open_risc_v_soc.v# 2. 顶层层次检查与过程块展开 (-top 后接顶层模块名)hierarchy -check -top open_risc_vprocopt# 3. 将 Memory 拆解为标准 DFF (防止 Regfile 无法映射到标准门)memory_dffmemory_mapopt# 4. 解锁带 Enable 使能端的 DFF 为 MUX + 普通 DFFtechmapopt# 5. 映射 DFF 到 Sky130 工艺库 (精准映射带低电平异步复位的 DFF)dfflegalize -cell $_DFF_PN0_ 0 -cell $_DFF_P_ 0 -cell $_DFF_PP0_ 0dfflibmap -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib# 6. 映射组合逻辑abc -liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.libopt_clean -purge# 7. 清除属性并导出网表write_verilog -noattr /work/rep/synth.v
+
+
+综合注意事项：
+
+头文件顺序：defines.v 等宏定义文件必须排在最前方。
+消除抽象门&#x2F;Latch：必须使用 memory_dff 和 memory_map。若未正确映射，网表中会残留 $_DLATCH_N_ 或 $_DFF_PN0_ 等抽象器件，导致后续 OpenSTA 时序分析直接崩溃。
+网表质量自检：综合完成后，建议在 PowerShell 中搜索生成的网表，确保输出为 0 行结果：Select-String -Path &quot;D:\IC\risc_practice\phase3\rep\synth.v&quot; -Pattern &quot;always&quot;Select-String -Path &quot;D:\IC\risc_practice\phase3\rep\synth.v&quot; -Pattern &quot;\$_&quot;
+
+
+
+二、 编写 STA 时序约束文件 (sta/sta.sdc)# 1. 定义主时钟 clk，周期设为 10.0 ns (对应 100MHz 目标频率)create_clock -name clk -period 10.0 [get_ports clk]# 2. 设置输入延迟 (排除 clk 端口本身，避免 Warning)set_input_delay 2.0 -clock clk [get_ports * -filter &quot;direction == input &amp;&amp; name != clk&quot;]# 3. 设置输出延迟set_output_delay 2.0 -clock clk [all_outputs]
+
+
+三、 编写 OpenSTA 分析脚本 (sta/sta.tcl)# 1. 读入 Sky130 物理时序库 (.lib)read_liberty /root/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib# 2. 读入综合门级网表read_verilog /work/rep/synth.v# 3. 绑定顶层模块link_design open_risc_v# 4. 读入 SDC 约束文件read_sdc /work/sta/sta.sdc# 5. 输出 Setup / Hold 时序报告与功耗报告至 rep/ 目录report_checks -path_delay max -format full_clock_expanded -digits 4 &gt; /work/rep/sta_setup.rptreport_checks -path_delay min -format full_clock_expanded -digits 4 &gt; /work/rep/sta_hold.rptreport_power &gt; /work/rep/power.rptexit
+
+
+四、 编写 OpenLane 后端配置文件 (config.json)&#123;    &quot;DESIGN_NAME&quot;: &quot;open_risc_v&quot;,    &quot;VERILOG_FILES&quot;: [        &quot;dir::rtl/defines.v&quot;,        &quot;dir::rtl/open_risc_v_soc.v&quot;    ],    &quot;CLOCK_PORT&quot;: &quot;clk&quot;,    &quot;CLOCK_PERIOD&quot;: 10.0,    &quot;FP_CORE_UTIL&quot;: 40,    &quot;PL_TARGET_DENSITY&quot;: 0.45,    &quot;FP_PDN_MULTILAYER&quot;: true&#125;
+
+
+参数说明：FP_CORE_UTIL: 40 代表逻辑单元占用芯片 Core 面积的 40%，预留 60% 空间供金属线网布线，可有效规避后端 Routing 拥塞 (Congestion)。
+
+
+五、 常用容器运维指令在 Windows PowerShell 中执行的日常容器维护命令：
+# 1. 查看所有容器状态 (包括运行中与暂停的)docker ps -a# 2. 启动已休眠的容器docker start sta_analysis# 3. 进入运行中的容器 Bashdocker exec -it sta_analysis bash# 4. 停止并删除容器docker stop sta_analysisdocker rm sta_analysis# 5. 一键重新创建容器并挂载工程目录docker run -dit --name sta_analysis -v &quot;D:\IC\risc_practice\phase3:/work&quot; efabless/openlane:latestdocker exec sta_analysis volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b
+]]></content>
+      <categories>
+        <category>数字 IC</category>
+      </categories>
+      <tags>
+        <tag>Openlane</tag>
+        <tag>EDA</tag>
+        <tag>后端设计</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器</title>
+    <url>/2026/09/08/%E5%9F%BA%E4%BA%8EMNIST%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E7%9A%84BNN%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F/</url>
+    <content><![CDATA[项目实现了一个用于 MNIST 手写数字识别的二值神经网络（Binary Neural Network，BNN），并把它从 PyTorch 模型逐步转换成可综合的 Verilog 电路。项目本身没有任何实用价值，而是走通一条完整路径：神经网络训练、二值参数导出、整数参考模型、RTL 验证，以及资源优化。有点意思的可能就其中的数学原理和PE优化。
+工程代码见: https://github.com/YangHong7/BNN_MNIST_
+
+
+1. MNIST 分类神经网络
+是的，依旧是CNN入门的那个网络，但是训练的时候我们使用BNN
+
+1.1 网络结构MNIST 图像大小为 $28\times28$。输入网络前，图像被拉平成一个长度为 784 的向量：
+28 × 28 灰度图像        ↓ 展平并二值化784 维输入        ↓ BinaryLinear(784, 128) + BN + Sign128 维二值激活        ↓ BinaryLinear(128, 64) + BN + Sign64 维二值激活        ↓ BinaryLinear(64, 10)10 个类别分数        ↓ Argmax预测数字 0～9
+
+对应的网络结构为：
+
+
+
+层
+输入维度
+输出维度
+后处理
+
+
+
+隐藏层1
+784
+128
+BatchNorm + Sign
+
+
+隐藏层2
+128
+64
+BatchNorm + Sign
+
+
+输出层
+64
+10
+Argmax
+
+
+1.2 功能每个隐藏层都由三个步骤组成：
+BinaryLinear完成输入与权重的点积。以第一层为例，它包含128个神经元。每个神经元都接收同一张图像的784个输入，但拥有自己的一组784维权重，最终产生1个输出。因此第一层可以理解为同时计算128个点积：
+$$S_j&#x3D;\sum_{i&#x3D;0}^{783}a_iw_{j,i},\qquad j&#x3D;0,1,\ldots,127$$
+其中 $a_i$ 是输入激活，$w_{j,i}$ 是第 $j$ 个神经元的权重。第二层重复相同过程，把128维输入转换成64维；输出层再计算10个分数，分别对应数字0到9。
+BatchNorm利用训练得到的均值、方差、缩放和偏移调整点积结果：
+$$y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta$$
+这个公式对每个神经元分别计算，各参数含义如下：
+
+
+
+符号
+含义
+是否参与梯度更新
+
+
+
+$S$
+BinaryLinear 输出的点积结果
+不是BN参数
+
+
+$\mu$
+$S$ 的均值
+批次统计量或累计统计量
+
+
+$\mathrm{var}$
+$S$ 的方差
+批次统计量或累计统计量
+
+
+$\gamma$
+可学习的缩放系数
+是
+
+
+$\beta$
+可学习的平移系数
+是
+
+
+$\varepsilon$
+防止除零的固定小量，默认 $10^{-5}$
+否
+
+
+其中 $\gamma$ 和 $\beta$ 与普通权重一样由优化器更新；均值和方差不是通过反向传播学习的，而是由每一批数据统计得到。训练和推理阶段具体使用哪一组均值、方差，将在3.2和3.3节说明。
+Sign结果大于等于0时输出 +1，否则输出 -1。
+因此，隐藏层虽然会计算一个数值点积，但传给下一层的仍然是二值激活。
+输出层没有BN和Sign，用Argmax选择最大分数对应的类别。
+2. 核心数学原理BNN可以把隐藏层简化成三步：
+二值乘法 → XNOR有符号累加 → PopcountBatchNorm + Sign → Threshold Compare
+
+2.1 XNOR 代替二值乘法对任意一对二值数 $a_i,w_i\in{-1,+1}$：
+
+
+
+$a_i$
+$w_i$
+$a_iw_i$
+比特编码
+XNOR
+
+
+
++1
++1
++1
+1, 1
+1
+
+
++1
+-1
+-1
+1, 0
+0
+
+
+-1
++1
+-1
+0, 1
+0
+
+
+-1
+-1
++1
+0, 0
+1
+
+
+两者同号时乘积为 +1，XNOR也输出1；异号时乘积为 -1，XNOR输出0。因此一组二值乘法可以直接写成：
+xnor_bits = ~(activation ^ weight);
+
+这里不再需要DSP乘法器，只需要逐位逻辑运算。
+2.2 Popcount 还原点积XNOR只告诉我们哪些位置同号，还需要把结果累加。假设输入长度为 $N$，XNOR结果中有 $P$ 个1：
+
+$P$ 个位置同号，对点积贡献 $+1$；
+$N-P$ 个位置异号，对点积贡献 $-1$。
+
+因此原始点积为：
+$$S&#x3D;P-(N-P)&#x3D;2P-N$$
+这里的 $P$ 就是对XNOR结果进行Popcount得到的1的数量。
+例如：
+activation : +1  -1  +1  +1  -1  -1  +1  +1weight     : +1  +1  -1  +1  -1  +1  +1  +1XNOR bits  :  1   0   0   1   1   0   1   1
+
+共有 $P&#x3D;5$ 个位置相同，$N&#x3D;8$，所以：
+$$S&#x3D;2\times5-8&#x3D;2$$
+至此，“8次乘法加累加”就变成了“8位XNOR加一次Popcount”。
+2.3 BN 和 Sign 折叠成整数阈值Popcount可以恢复点积，但隐藏层后面还有BN和Sign。推理时BN为：
+$$y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta$$
+Sign只关心 $y$ 是否大于等于0。令：
+$$\hat{\sigma}&#x3D;\sqrt{\mathrm{var}+\varepsilon}$$
+由 $y\geq0$ 可以求出点积阈值：
+$$S_{thr}&#x3D;\mu-\frac{\beta\hat{\sigma}}{\gamma}$$
+再代入 $S&#x3D;2P-N$：
+
+当 $\gamma&gt;0$ 时，不等号方向不变：
+
+$$P\geq\left\lceil\frac{S_{thr}+N}{2}\right\rceil$$
+
+当 $\gamma&lt;0$ 时，不等号方向反转：
+
+$$P\leq\left\lfloor\frac{S_{thr}+N}{2}\right\rfloor$$
+所以每个隐藏层神经元只需导出一个整数阈值 T 和一个方向位 flip：
+binary_out = flip ? (popcount_in &lt;= threshold)                  : (popcount_in &gt;= threshold);
+
+至此，一个隐藏层神经元的完整推理已经从：
+浮点/整数乘加 → BatchNorm → Sign
+
+变成：
+XNOR → Popcount → 整数阈值比较
+
+于是BNN网络完美适配数字电路。
+2.4 输出层只需要 Argmax
+Tips： 输出层没有 BN 和 Sign。
+
+第 $c$ 个类别的分数仍满足：
+$$S_c&#x3D;2P_c-N$$
+因为10个类别的 $N$ 相同，乘2和减去相同常数不会改变大小顺序：
+$$\operatorname*{argmax}_c S_c&#x3D;\operatorname*{argmax}_c P_c$$
+因此硬件直接对10个Popcount取最大值即可，不需要Softmax，也不存在“负指数归一化”。
+3. 网络训练和权重导出3.1 构建网络训练代码按照 784 → 128 → 64 → 10 构建三层网络。Linear层不使用bias，两个隐藏层各自连接BN和Sign，输出层直接输出10个logit。
+输入图像先按 pixel &gt; 0.5 二值化：
+x = (x &gt; 0.5).float() * 2.0 - 1.0
+
+得到的输入只有 +1/-1，与二值权重进行点积。
+3.2 训练二值权重Sign几乎处处不可导，因此训练时使用STE（Straight-Through Estimator）：
+
+前向传播使用 sign(w_real)；
+反向传播让梯度近似穿过Sign；
+优化器更新浮点权重 w_real；
+每次更新后把权重裁剪到 [-1,1]。
+
+训练时实际上同时存在两种权重表示：
+
+
+
+表示
+取值
+用途
+
+
+
+w_real
+[-1,1] 内的浮点数
+由Adam更新并保存在 bnn_model.pth 中
+
+
+w_bin = sign(w_real)
+只有 +1/-1
+真正参与前向点积
+
+
+前向计算使用的权重确实始终是 +1/-1；“浮点权重”是它背后用于累计梯度的主权重，并不直接参与前向点积。
+之所以保留 w_real，是因为二值权重无法记录小幅更新。例如一个权重当前为 +1，减去很小的梯度后若仍只能保存 +1，这次更新就完全丢失。浮点主权重可以逐步变化，跨过0时，其符号才从 +1 翻转为 -1。STE负责把二值前向路径上的梯度近似传回 w_real。
+一次隐藏层前向传播可以更准确地写成：
+二值输入 (+1/-1)  → 与 w_bin (+1/-1) 做 BinaryLinear  → 得到点积 S  → BN 输出临时浮点值 y  → Sign 再变回 +1/-1
+
+训练时BN使用当前mini-batch的均值 $\mu_B$ 和方差 $\mathrm{var}_B$ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 momentum=0.1，每处理一批就执行：
+$$\mathrm{running_mean}{new}&#x3D;0.9,\mathrm{running_mean}{old}+0.1,\mu_B$$
+$$\mathrm{running_var}{new}\approx0.9,\mathrm{running_var}{old}+0.1,\mathrm{var}_B$$
+这里的0.9和0.1是指数移动平均，不是“直接采用新统计量”：旧统计量保留90%，当前批次贡献10%，从而减小单个批次波动带来的影响。
+当前训练配置为：
+
+
+
+项目
+配置
+
+
+
+数据集
+MNIST：60,000张训练图，10,000张测试图
+
+
+Epoch
+50
+
+
+Batch size
+128
+
+
+优化器
+Adam
+
+
+初始学习率
+$3\times10^{-3}$
+
+
+学习率策略
+Cosine Annealing
+
+
+损失函数
+CrossEntropyLoss
+
+
+训练过程中保存准确率最高的一轮参数，得到 bnn_model.pth。当前模型在完整10,000张测试集上的准确率为 95.06%。
+
+当前脚本直接根据测试集准确率保存最佳模型。更严格的实验应从训练集划分验证集，只在最后使用一次测试集。
+
+3.3 导出权重和阈值训练阶段执行 model.train() 时，BN使用当前批次的 $\mu_B$ 和 $\mathrm{var}_B$，并按前面的 0.9 × 旧值 + 0.1 × 当前值 更新 running_mean 和 running_var。
+导出和推理前执行 model.eval() 后，BN停止更新，也不再使用当前输入批次的统计量，而是固定使用训练结束时保存的：
+running_meanrunning_var
+model.eval() 不会重新计算统计量，也不会把BN变成整数；它只是把BN从“使用当前批次统计量”切换为“使用训练阶段累计统计量”。导出脚本再读取这些固定的 running_mean、running_var 以及 $\gamma$、$\beta$，计算每个神经元的整数阈值。
+随后完成三件事：
+
+对三层浮点主权重 w_real 取Sign，得到真正部署的 +1/-1 权重，再编码为1&#x2F;0，生成 w1.mem、w2.mem、w3.mem；
+把两层BN和Sign折叠成整数阈值，生成 th1.mem、th2.mem；
+导出1,000张二值测试图和标签，供RTL仿真使用。
+
+导出脚本会重新读取生成的文件，检查行数、位宽、位序和每一个比特，避免Python数组顺序与Verilog向量顺序不一致。
+3.4 Golden Referencegolden_reference.py 不直接复用PyTorch层，而是读取 .mem 文件，按照硬件顺序执行：
+XNOR → Popcount → Threshold → XNOR → Popcount → Threshold     → XNOR → Popcount → Argmax
+
+它再与PyTorch模型比较完整10,000张测试图。当前结果是浮点推理与整数推理逐张一致，而不仅仅是最终准确率相同。
+导出的1,000张RTL测试子集准确率为 94.70%，同时生成 golden_preds.mem 作为RTL逐张比对标准。
+4. RTL 结构RTL按照数学步骤拆成几个简单模块：
+bnn_top├─ bnn_layer1          784 → 128│  ├─ xnor_popcount│  └─ threshold_compare├─ bnn_layer2          128 → 64│  ├─ xnor_popcount│  └─ threshold_compare├─ bnn_output_layer    64 → 10│  └─ xnor_popcount└─ argmax
+
+仿真时，Testbench读取二值图像、标签和Golden预测，分别统计：
+
+Accuracy：RTL预测与真实标签的符合率；
+Golden agreement：RTL与整数参考模型是否逐张一致。
+
+后者必须达到100%，否则说明RTL、阈值、位序或握手时序仍有错误。
+为了让Vivado综合时真正看到固定权重，综合版本使用Python脚本把 .mem 转换成 localparam 或 case 中的常量。Testbench中的 $readmemb 只负责仿真数据加载。
+5. PE 复用5.1 全展开最初的全展开版本使用 generate for 为所有神经元分别例化硬件。需要注意：Verilog中的 generate for 会在编译展开阶段复制电路，并不会让同一套电路在多个周期循环工作。
+因此，全展开版一共生成：
+第一层 128套 + 第二层64套 + 输出层10套 = 202套计算单元
+
+它理论上并行度很高，但第一层128棵784输入Popcount树会带来巨大的LUT占用和布线压力。Vivado OOC布局结果为 100,254 LUT、5 FF，最终没有完成路由。
+第二版只在三层之间加入寄存器。它把跨层长路径切开，但没有减少神经元计算单元数量。Vivado OOC布局结果为 85,270 LUT、199 FF，中间时序明显改善，仍然没有完成路由。
+这两版说明：流水线可以改善组合路径，但不能从根本上解决“同时存在太多Popcount电路”的问题。
+5.2 16-PE 复用方案PE（Processing Element）是一套可重复使用的神经元计算单元，负责：
+一组激活 + 一组权重 → XNOR → Popcount → Threshold
+
+在PE复用版本中，不再为128个第一层神经元各放一套电路，而是只放16个PE：
+
+
+
+层
+输出神经元
+物理PE
+分组数
+
+
+
+隐藏层1
+128
+16
+8
+
+
+隐藏层2
+64
+16
+4
+
+
+输出层
+10
+10
+1
+
+
+以第一层为例：
+第1拍：16个PE计算神经元 0～15第2拍：16个PE计算神经元16～31...第8拍：16个PE计算神经元112～127
+
+group_idx 决定当前选择哪一组权重，16个PE并行计算当前组，并把结果写入128-bit输出寄存器。8组完成后拉高 done，顶层状态机再启动第二层。
+第二层需要4组，输出层需要1组，所以核心计算量为：
+$$8+4+1&#x3D;13\text{个分组计算拍}$$
+当前控制还包含启动和层间 start/done 交接周期。各层串行执行，也没有让多张图片重叠进入流水线。因此，这个版本的目标首先是验证“用时间换面积”，而不是追求最高吞吐率。
+当前综合版本仍然采用固定模型：生成脚本把权重写进 case(group_idx) 和 localparam。它已经实现了PE时分复用，但还不是从BRAM动态读取、可以随时切换权重的通用神经网络加速器。
+5.3 Vivado 结果测试器件为 XC7A200T-2FBV484，Vivado 2018.1，时钟约束为100 MHz。由于顶层直接暴露784-bit图像输入，PPA分析采用OOC模式，只考察计算核心，不代表最终板级I&#x2F;O设计。
+
+
+
+版本
+实现状态
+LUT
+FF
+BRAM
+DSP
+时序
+
+
+
+全展开
+布局完成，路由未完成
+100,254
+5
+0
+0
+中间WNS -32.273 ns
+
+
+层间流水
+布局完成，路由未完成
+85,270
+199
+0
+0
+中间WNS -6.058 ns
+
+
+16-PE复用
+完整路由
+23,368
+1,056
+0
+0
+Routed WNS -4.720 ns
+
+
+与全展开版相比，PE复用版的LUT减少约 76.7%。30,423条需要路由的网络全部完成路由，routing error为0。这说明PE复用确实解决了主要的资源密度和拥塞问题。
+但路由成功不等于100 MHz时序已经通过。当前最差路径约14.41 ns，其中约73%来自布线延迟。根据WNS粗略估算，当前频率上限约为：
+$$f_{max}\approx\frac{1}{10\text{ ns}+4.720\text{ ns}}\approx67.9\text{ MHz}$$
+功能验证方面，PE复用版已完成100张阶段性RTL回归，准确率为 97&#x2F;100，与Golden Reference 100&#x2F;100一致。Testbench可以继续扩展到完整的1,000张导出测试集。
+6. 总结回到最开始的神经网络，它原本逐层执行点积、BN和激活；在二值条件下，这些运算可以依次变成XNOR、Popcount和整数阈值比较，输出层再直接对Popcount做Argmax。这个变换是由 +1/-1 编码和BN不等式严格推导出来的。
+全展开证明了算法能够直接映射成电路，PE复用最终解决了资源和路由问题。这个MNIST网络很小，单独部署没有明显实际价值，但同样的XNOR-Popcount PE可以继续用于更大的全连接层或二值卷积网络，这才是这种结构更有意义的应用方向。
+]]></content>
+      <categories>
+        <category>数字 IC</category>
+      </categories>
+      <tags>
+        <tag>BNN</tag>
+        <tag>Verilog</tag>
       </tags>
   </entry>
 </search>

@@ -1,0 +1,561 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器 | yanghong</title><meta name="author" content="yanghong7"><meta name="copyright" content="yanghong7"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器">
+<meta property="og:url" content="https://yanghong7.github.io/2026/09/08/%E5%9F%BA%E4%BA%8EMNIST%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E7%9A%84BNN%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F/index.html">
+<meta property="og:site_name" content="yanghong">
+<meta property="og:description" content="。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yanghong7.github.io/img/columns/digital-ic.jpg">
+<meta property="article:published_time" content="2026-09-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-07T16:00:00.000Z">
+<meta property="article:author" content="yanghong7">
+<meta property="article:tag" content="BNN">
+<meta property="article:tag" content="Verilog">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yanghong7.github.io/img/columns/digital-ic.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器",
+  "url": "https://yanghong7.github.io/2026/09/08/%E5%9F%BA%E4%BA%8EMNIST%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E7%9A%84BNN%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F/",
+  "image": "https://yanghong7.github.io/img/columns/digital-ic.jpg",
+  "datePublished": "2026-09-07T16:00:00.000Z",
+  "dateModified": "2026-09-07T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "yanghong7",
+      "url": "https://yanghong7.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://yanghong7.github.io/2026/09/08/%E5%9F%BA%E4%BA%8EMNIST%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E7%9A%84BNN%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F/index.html"><link rel="preconnect" href="//cdnjs.cloudflare.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const mediaQueryDark = window.matchMedia('(prefers-color-scheme: dark)')
+          const mediaQueryLight = window.matchMedia('(prefers-color-scheme: light)')
+
+          if (theme === undefined) {
+            if (mediaQueryLight.matches) activateLightMode()
+            else if (mediaQueryDark.matches) activateDarkMode()
+            else {
+              const hour = new Date().getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            mediaQueryDark.addEventListener('change', () => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else {
+            theme === 'light' ? activateLightMode() : activateDarkMode()
+          }
+        
+      
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdnjs.cloudflare.com/ajax/libs/egjs-infinitegrid/4.13.0/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/fluid-style.css?v=10"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-color: #eee;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img fixed" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">yanghong</span></a><a class="nav-page-title" href="/"><span class="site-name">从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout hide-aside" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2026-09-07T16:00:00.000Z" title="发表于 2026-09-08 00:00:00">2026-09-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/digital-ic/">数字 IC</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>项目实现了一个用于 MNIST 手写数字识别的二值神经网络（Binary Neural Network，BNN），并把它从 PyTorch 模型逐步转换成可综合的 Verilog 电路。项目本身没有任何实用价值，而是走通一条完整路径：神经网络训练、二值参数导出、整数参考模型、RTL 验证，以及资源优化。有点意思的可能就其中的数学原理和PE优化。</p>
+<p>工程代码见: <a target="_blank" rel="noopener" href="https://github.com/YangHong7/BNN_MNIST">https://github.com/YangHong7/BNN_MNIST</a>_</p>
+<span id="more"></span>
+
+<h2 id="1-MNIST-分类神经网络"><a href="#1-MNIST-分类神经网络" class="headerlink" title="1. MNIST 分类神经网络"></a>1. MNIST 分类神经网络</h2><blockquote>
+<p>是的，依旧是CNN入门的那个网络，但是训练的时候我们使用BNN</p>
+</blockquote>
+<h3 id="1-1-网络结构"><a href="#1-1-网络结构" class="headerlink" title="1.1 网络结构"></a>1.1 网络结构</h3><p>MNIST 图像大小为 $28\times28$。输入网络前，图像被拉平成一个长度为 784 的向量：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">28 × 28 灰度图像</span><br><span class="line">        ↓ 展平并二值化</span><br><span class="line">784 维输入</span><br><span class="line">        ↓ BinaryLinear(784, 128) + BN + Sign</span><br><span class="line">128 维二值激活</span><br><span class="line">        ↓ BinaryLinear(128, 64) + BN + Sign</span><br><span class="line">64 维二值激活</span><br><span class="line">        ↓ BinaryLinear(64, 10)</span><br><span class="line">10 个类别分数</span><br><span class="line">        ↓ Argmax</span><br><span class="line">预测数字 0～9</span><br></pre></td></tr></table></figure>
+
+<p>对应的网络结构为：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th align="right">输入维度</th>
+<th align="right">输出维度</th>
+<th>后处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>隐藏层1</td>
+<td align="right">784</td>
+<td align="right">128</td>
+<td>BatchNorm + Sign</td>
+</tr>
+<tr>
+<td>隐藏层2</td>
+<td align="right">128</td>
+<td align="right">64</td>
+<td>BatchNorm + Sign</td>
+</tr>
+<tr>
+<td>输出层</td>
+<td align="right">64</td>
+<td align="right">10</td>
+<td>Argmax</td>
+</tr>
+</tbody></table>
+<h3 id="1-2-功能"><a href="#1-2-功能" class="headerlink" title="1.2 功能"></a>1.2 功能</h3><p>每个隐藏层都由三个步骤组成：</p>
+<h4 id="BinaryLinear"><a href="#BinaryLinear" class="headerlink" title="BinaryLinear"></a>BinaryLinear</h4><p>完成输入与权重的点积。以第一层为例，它包含128个神经元。每个神经元都接收同一张图像的784个输入，但拥有自己的一组784维权重，最终产生1个输出。因此第一层可以理解为同时计算128个点积：</p>
+<p>$$<br>S_j&#x3D;\sum_{i&#x3D;0}^{783}a_iw_{j,i},\qquad j&#x3D;0,1,\ldots,127<br>$$</p>
+<p>其中 $a_i$ 是输入激活，$w_{j,i}$ 是第 $j$ 个神经元的权重。第二层重复相同过程，把128维输入转换成64维；输出层再计算10个分数，分别对应数字0到9。</p>
+<h4 id="BatchNorm"><a href="#BatchNorm" class="headerlink" title="BatchNorm"></a>BatchNorm</h4><p>利用训练得到的均值、方差、缩放和偏移调整点积结果：</p>
+<p>$$<br>y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta<br>$$</p>
+<p>这个公式对每个神经元分别计算，各参数含义如下：</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>是否参与梯度更新</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$S$</td>
+<td><code>BinaryLinear</code> 输出的点积结果</td>
+<td>不是BN参数</td>
+</tr>
+<tr>
+<td>$\mu$</td>
+<td>$S$ 的均值</td>
+<td>批次统计量或累计统计量</td>
+</tr>
+<tr>
+<td>$\mathrm{var}$</td>
+<td>$S$ 的方差</td>
+<td>批次统计量或累计统计量</td>
+</tr>
+<tr>
+<td>$\gamma$</td>
+<td>可学习的缩放系数</td>
+<td>是</td>
+</tr>
+<tr>
+<td>$\beta$</td>
+<td>可学习的平移系数</td>
+<td>是</td>
+</tr>
+<tr>
+<td>$\varepsilon$</td>
+<td>防止除零的固定小量，默认 $10^{-5}$</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<p>其中 $\gamma$ 和 $\beta$ 与普通权重一样由优化器更新；均值和方差不是通过反向传播学习的，而是由每一批数据统计得到。训练和推理阶段具体使用哪一组均值、方差，将在3.2和3.3节说明。</p>
+<h4 id="Sign"><a href="#Sign" class="headerlink" title="Sign"></a>Sign</h4><p>结果大于等于0时输出 <code>+1</code>，否则输出 <code>-1</code>。</p>
+<p>因此，隐藏层虽然会计算一个数值点积，但传给下一层的仍然是二值激活。</p>
+<p>输出层没有BN和Sign，用Argmax选择最大分数对应的类别。</p>
+<h2 id="2-核心数学原理"><a href="#2-核心数学原理" class="headerlink" title="2. 核心数学原理"></a>2. 核心数学原理</h2><p>BNN可以把隐藏层简化成三步：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">二值乘法 → XNOR</span><br><span class="line">有符号累加 → Popcount</span><br><span class="line">BatchNorm + Sign → Threshold Compare</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-1-XNOR-代替二值乘法"><a href="#2-1-XNOR-代替二值乘法" class="headerlink" title="2.1 XNOR 代替二值乘法"></a>2.1 XNOR 代替二值乘法</h3><p>对任意一对二值数 $a_i,w_i\in{-1,+1}$：</p>
+<table>
+<thead>
+<tr>
+<th align="right">$a_i$</th>
+<th align="right">$w_i$</th>
+<th align="right">$a_iw_i$</th>
+<th>比特编码</th>
+<th align="right">XNOR</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">+1</td>
+<td align="right">+1</td>
+<td align="right">+1</td>
+<td>1, 1</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="right">+1</td>
+<td align="right">-1</td>
+<td align="right">-1</td>
+<td>1, 0</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td align="right">-1</td>
+<td align="right">+1</td>
+<td align="right">-1</td>
+<td>0, 1</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td align="right">-1</td>
+<td align="right">-1</td>
+<td align="right">+1</td>
+<td>0, 0</td>
+<td align="right">1</td>
+</tr>
+</tbody></table>
+<p>两者同号时乘积为 <code>+1</code>，XNOR也输出1；异号时乘积为 <code>-1</code>，XNOR输出0。因此一组二值乘法可以直接写成：</p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xnor_bits = ~(activation ^ weight);</span><br></pre></td></tr></table></figure>
+
+<p>这里不再需要DSP乘法器，只需要逐位逻辑运算。</p>
+<h3 id="2-2-Popcount-还原点积"><a href="#2-2-Popcount-还原点积" class="headerlink" title="2.2 Popcount 还原点积"></a>2.2 Popcount 还原点积</h3><p>XNOR只告诉我们哪些位置同号，还需要把结果累加。假设输入长度为 $N$，XNOR结果中有 $P$ 个1：</p>
+<ul>
+<li>$P$ 个位置同号，对点积贡献 $+1$；</li>
+<li>$N-P$ 个位置异号，对点积贡献 $-1$。</li>
+</ul>
+<p>因此原始点积为：</p>
+<p>$$<br>S&#x3D;P-(N-P)&#x3D;2P-N<br>$$</p>
+<p>这里的 $P$ 就是对XNOR结果进行Popcount得到的1的数量。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">activation : +1  -1  +1  +1  -1  -1  +1  +1</span><br><span class="line">weight     : +1  +1  -1  +1  -1  +1  +1  +1</span><br><span class="line">XNOR bits  :  1   0   0   1   1   0   1   1</span><br></pre></td></tr></table></figure>
+
+<p>共有 $P&#x3D;5$ 个位置相同，$N&#x3D;8$，所以：</p>
+<p>$$<br>S&#x3D;2\times5-8&#x3D;2<br>$$</p>
+<p>至此，“8次乘法加累加”就变成了“8位XNOR加一次Popcount”。</p>
+<h3 id="2-3-BN-和-Sign-折叠成整数阈值"><a href="#2-3-BN-和-Sign-折叠成整数阈值" class="headerlink" title="2.3 BN 和 Sign 折叠成整数阈值"></a>2.3 BN 和 Sign 折叠成整数阈值</h3><p>Popcount可以恢复点积，但隐藏层后面还有BN和Sign。推理时BN为：</p>
+<p>$$<br>y&#x3D;\gamma\frac{S-\mu}{\sqrt{\mathrm{var}+\varepsilon}}+\beta<br>$$</p>
+<p>Sign只关心 $y$ 是否大于等于0。令：</p>
+<p>$$<br>\hat{\sigma}&#x3D;\sqrt{\mathrm{var}+\varepsilon}<br>$$</p>
+<p>由 $y\geq0$ 可以求出点积阈值：</p>
+<p>$$<br>S_{thr}&#x3D;\mu-\frac{\beta\hat{\sigma}}{\gamma}<br>$$</p>
+<p>再代入 $S&#x3D;2P-N$：</p>
+<ul>
+<li>当 $\gamma&gt;0$ 时，不等号方向不变：</li>
+</ul>
+<p>$$<br>P\geq\left\lceil\frac{S_{thr}+N}{2}\right\rceil<br>$$</p>
+<ul>
+<li>当 $\gamma&lt;0$ 时，不等号方向反转：</li>
+</ul>
+<p>$$<br>P\leq\left\lfloor\frac{S_{thr}+N}{2}\right\rfloor<br>$$</p>
+<p>所以每个隐藏层神经元只需导出一个整数阈值 <code>T</code> 和一个方向位 <code>flip</code>：</p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">binary_out = flip ? (popcount_in &lt;= threshold)</span><br><span class="line">                  : (popcount_in &gt;= threshold);</span><br></pre></td></tr></table></figure>
+
+<p>至此，一个隐藏层神经元的完整推理已经从：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">浮点/整数乘加 → BatchNorm → Sign</span><br></pre></td></tr></table></figure>
+
+<p>变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">XNOR → Popcount → 整数阈值比较</span><br></pre></td></tr></table></figure>
+
+<p>于是BNN网络完美适配数字电路。</p>
+<h3 id="2-4-输出层只需要-Argmax"><a href="#2-4-输出层只需要-Argmax" class="headerlink" title="2.4 输出层只需要 Argmax"></a>2.4 输出层只需要 Argmax</h3><blockquote>
+<p><strong>Tips：</strong> 输出层没有 BN 和 Sign。</p>
+</blockquote>
+<p>第 $c$ 个类别的分数仍满足：</p>
+<p>$$<br>S_c&#x3D;2P_c-N<br>$$</p>
+<p>因为10个类别的 $N$ 相同，乘2和减去相同常数不会改变大小顺序：</p>
+<p>$$<br>\operatorname*{argmax}_c S_c<br>&#x3D;\operatorname*{argmax}_c P_c<br>$$</p>
+<p>因此硬件直接对10个Popcount取最大值即可，不需要Softmax，也不存在“负指数归一化”。</p>
+<h2 id="3-网络训练和权重导出"><a href="#3-网络训练和权重导出" class="headerlink" title="3. 网络训练和权重导出"></a>3. 网络训练和权重导出</h2><h3 id="3-1-构建网络"><a href="#3-1-构建网络" class="headerlink" title="3.1 构建网络"></a>3.1 构建网络</h3><p>训练代码按照 <code>784 → 128 → 64 → 10</code> 构建三层网络。Linear层不使用bias，两个隐藏层各自连接BN和Sign，输出层直接输出10个logit。</p>
+<p>输入图像先按 <code>pixel &gt; 0.5</code> 二值化：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x = (x &gt; <span class="number">0.5</span>).<span class="built_in">float</span>() * <span class="number">2.0</span> - <span class="number">1.0</span></span><br></pre></td></tr></table></figure>
+
+<p>得到的输入只有 <code>+1/-1</code>，与二值权重进行点积。</p>
+<h3 id="3-2-训练二值权重"><a href="#3-2-训练二值权重" class="headerlink" title="3.2 训练二值权重"></a>3.2 训练二值权重</h3><p>Sign几乎处处不可导，因此训练时使用STE（Straight-Through Estimator）：</p>
+<ul>
+<li>前向传播使用 <code>sign(w_real)</code>；</li>
+<li>反向传播让梯度近似穿过Sign；</li>
+<li>优化器更新浮点权重 <code>w_real</code>；</li>
+<li>每次更新后把权重裁剪到 <code>[-1,1]</code>。</li>
+</ul>
+<p>训练时实际上同时存在两种权重表示：</p>
+<table>
+<thead>
+<tr>
+<th>表示</th>
+<th>取值</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>w_real</code></td>
+<td><code>[-1,1]</code> 内的浮点数</td>
+<td>由Adam更新并保存在 <code>bnn_model.pth</code> 中</td>
+</tr>
+<tr>
+<td><code>w_bin = sign(w_real)</code></td>
+<td>只有 <code>+1/-1</code></td>
+<td>真正参与前向点积</td>
+</tr>
+</tbody></table>
+<p>前向计算使用的权重确实始终是 <code>+1/-1</code>；“浮点权重”是它背后用于累计梯度的主权重，并不直接参与前向点积。</p>
+<p>之所以保留 <code>w_real</code>，是因为二值权重无法记录小幅更新。例如一个权重当前为 <code>+1</code>，减去很小的梯度后若仍只能保存 <code>+1</code>，这次更新就完全丢失。浮点主权重可以逐步变化，跨过0时，其符号才从 <code>+1</code> 翻转为 <code>-1</code>。STE负责把二值前向路径上的梯度近似传回 <code>w_real</code>。</p>
+<p>一次隐藏层前向传播可以更准确地写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">二值输入 (+1/-1)</span><br><span class="line">  → 与 w_bin (+1/-1) 做 BinaryLinear</span><br><span class="line">  → 得到点积 S</span><br><span class="line">  → BN 输出临时浮点值 y</span><br><span class="line">  → Sign 再变回 +1/-1</span><br></pre></td></tr></table></figure>
+
+<p>训练时BN使用当前mini-batch的均值 $\mu_B$ 和方差 $\mathrm{var}_B$ 完成本批归一化，同时维护用于部署的累计统计量。PyTorch默认 <code>momentum=0.1</code>，每处理一批就执行：</p>
+<p>$$<br>\mathrm{running_mean}<em>{new}<br>&#x3D;0.9,\mathrm{running_mean}</em>{old}+0.1,\mu_B<br>$$</p>
+<p>$$<br>\mathrm{running_var}<em>{new}<br>\approx0.9,\mathrm{running_var}</em>{old}+0.1,\mathrm{var}_B<br>$$</p>
+<p>这里的0.9和0.1是指数移动平均，不是“直接采用新统计量”：旧统计量保留90%，当前批次贡献10%，从而减小单个批次波动带来的影响。</p>
+<p>当前训练配置为：</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th align="right">配置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据集</td>
+<td align="right">MNIST：60,000张训练图，10,000张测试图</td>
+</tr>
+<tr>
+<td>Epoch</td>
+<td align="right">50</td>
+</tr>
+<tr>
+<td>Batch size</td>
+<td align="right">128</td>
+</tr>
+<tr>
+<td>优化器</td>
+<td align="right">Adam</td>
+</tr>
+<tr>
+<td>初始学习率</td>
+<td align="right">$3\times10^{-3}$</td>
+</tr>
+<tr>
+<td>学习率策略</td>
+<td align="right">Cosine Annealing</td>
+</tr>
+<tr>
+<td>损失函数</td>
+<td align="right">CrossEntropyLoss</td>
+</tr>
+</tbody></table>
+<p>训练过程中保存准确率最高的一轮参数，得到 <code>bnn_model.pth</code>。当前模型在完整10,000张测试集上的准确率为 <strong>95.06%</strong>。</p>
+<blockquote>
+<p>当前脚本直接根据测试集准确率保存最佳模型。更严格的实验应从训练集划分验证集，只在最后使用一次测试集。</p>
+</blockquote>
+<h3 id="3-3-导出权重和阈值"><a href="#3-3-导出权重和阈值" class="headerlink" title="3.3 导出权重和阈值"></a>3.3 导出权重和阈值</h3><p>训练阶段执行 <code>model.train()</code> 时，BN使用当前批次的 $\mu_B$ 和 $\mathrm{var}_B$，并按前面的 <code>0.9 × 旧值 + 0.1 × 当前值</code> 更新 <code>running_mean</code> 和 <code>running_var</code>。</p>
+<p>导出和推理前执行 <code>model.eval()</code> 后，BN停止更新，也不再使用当前输入批次的统计量，而是固定使用训练结束时保存的：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">running_mean</span><br><span class="line">running_var</span><br></pre></td></tr></table></figure>
+<p><code>model.eval()</code> 不会重新计算统计量，也不会把BN变成整数；它只是把BN从“使用当前批次统计量”切换为“使用训练阶段累计统计量”。导出脚本再读取这些固定的 <code>running_mean</code>、<code>running_var</code> 以及 $\gamma$、$\beta$，计算每个神经元的整数阈值。</p>
+<p>随后完成三件事：</p>
+<ol>
+<li>对三层浮点主权重 <code>w_real</code> 取Sign，得到真正部署的 <code>+1/-1</code> 权重，再编码为1&#x2F;0，生成 <code>w1.mem</code>、<code>w2.mem</code>、<code>w3.mem</code>；</li>
+<li>把两层BN和Sign折叠成整数阈值，生成 <code>th1.mem</code>、<code>th2.mem</code>；</li>
+<li>导出1,000张二值测试图和标签，供RTL仿真使用。</li>
+</ol>
+<p>导出脚本会重新读取生成的文件，检查行数、位宽、位序和每一个比特，避免Python数组顺序与Verilog向量顺序不一致。</p>
+<h3 id="3-4-Golden-Reference"><a href="#3-4-Golden-Reference" class="headerlink" title="3.4 Golden Reference"></a>3.4 Golden Reference</h3><p><code>golden_reference.py</code> 不直接复用PyTorch层，而是读取 <code>.mem</code> 文件，按照硬件顺序执行：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">XNOR → Popcount → Threshold → XNOR → Popcount → Threshold</span><br><span class="line">     → XNOR → Popcount → Argmax</span><br></pre></td></tr></table></figure>
+
+<p>它再与PyTorch模型比较完整10,000张测试图。当前结果是浮点推理与整数推理逐张一致，而不仅仅是最终准确率相同。</p>
+<p>导出的1,000张RTL测试子集准确率为 <strong>94.70%</strong>，同时生成 <code>golden_preds.mem</code> 作为RTL逐张比对标准。</p>
+<h2 id="4-RTL-结构"><a href="#4-RTL-结构" class="headerlink" title="4. RTL 结构"></a>4. RTL 结构</h2><p>RTL按照数学步骤拆成几个简单模块：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">bnn_top</span><br><span class="line">├─ bnn_layer1          784 → 128</span><br><span class="line">│  ├─ xnor_popcount</span><br><span class="line">│  └─ threshold_compare</span><br><span class="line">├─ bnn_layer2          128 → 64</span><br><span class="line">│  ├─ xnor_popcount</span><br><span class="line">│  └─ threshold_compare</span><br><span class="line">├─ bnn_output_layer    64 → 10</span><br><span class="line">│  └─ xnor_popcount</span><br><span class="line">└─ argmax</span><br></pre></td></tr></table></figure>
+
+<p>仿真时，Testbench读取二值图像、标签和Golden预测，分别统计：</p>
+<ul>
+<li><code>Accuracy</code>：RTL预测与真实标签的符合率；</li>
+<li><code>Golden agreement</code>：RTL与整数参考模型是否逐张一致。</li>
+</ul>
+<p>后者必须达到100%，否则说明RTL、阈值、位序或握手时序仍有错误。</p>
+<p>为了让Vivado综合时真正看到固定权重，综合版本使用Python脚本把 <code>.mem</code> 转换成 <code>localparam</code> 或 <code>case</code> 中的常量。Testbench中的 <code>$readmemb</code> 只负责仿真数据加载。</p>
+<h2 id="5-PE-复用"><a href="#5-PE-复用" class="headerlink" title="5. PE 复用"></a>5. PE 复用</h2><h3 id="5-1-全展开"><a href="#5-1-全展开" class="headerlink" title="5.1 全展开"></a>5.1 全展开</h3><p>最初的全展开版本使用 <code>generate for</code> 为所有神经元分别例化硬件。需要注意：Verilog中的 <code>generate for</code> 会在编译展开阶段复制电路，并不会让同一套电路在多个周期循环工作。</p>
+<p>因此，全展开版一共生成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">第一层 128套 + 第二层64套 + 输出层10套 = 202套计算单元</span><br></pre></td></tr></table></figure>
+
+<p>它理论上并行度很高，但第一层128棵784输入Popcount树会带来巨大的LUT占用和布线压力。Vivado OOC布局结果为 <strong>100,254 LUT、5 FF</strong>，最终没有完成路由。</p>
+<p>第二版只在三层之间加入寄存器。它把跨层长路径切开，但没有减少神经元计算单元数量。Vivado OOC布局结果为 <strong>85,270 LUT、199 FF</strong>，中间时序明显改善，仍然没有完成路由。</p>
+<p>这两版说明：流水线可以改善组合路径，但不能从根本上解决“同时存在太多Popcount电路”的问题。</p>
+<h3 id="5-2-16-PE-复用方案"><a href="#5-2-16-PE-复用方案" class="headerlink" title="5.2 16-PE 复用方案"></a>5.2 16-PE 复用方案</h3><p>PE（Processing Element）是一套可重复使用的神经元计算单元，负责：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">一组激活 + 一组权重 → XNOR → Popcount → Threshold</span><br></pre></td></tr></table></figure>
+
+<p>在PE复用版本中，不再为128个第一层神经元各放一套电路，而是只放16个PE：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th align="right">输出神经元</th>
+<th align="right">物理PE</th>
+<th align="right">分组数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>隐藏层1</td>
+<td align="right">128</td>
+<td align="right">16</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td>隐藏层2</td>
+<td align="right">64</td>
+<td align="right">16</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>输出层</td>
+<td align="right">10</td>
+<td align="right">10</td>
+<td align="right">1</td>
+</tr>
+</tbody></table>
+<p>以第一层为例：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">第1拍：16个PE计算神经元 0～15</span><br><span class="line">第2拍：16个PE计算神经元16～31</span><br><span class="line">...</span><br><span class="line">第8拍：16个PE计算神经元112～127</span><br></pre></td></tr></table></figure>
+
+<p><code>group_idx</code> 决定当前选择哪一组权重，16个PE并行计算当前组，并把结果写入128-bit输出寄存器。8组完成后拉高 <code>done</code>，顶层状态机再启动第二层。</p>
+<p>第二层需要4组，输出层需要1组，所以核心计算量为：</p>
+<p>$$<br>8+4+1&#x3D;13\text{个分组计算拍}<br>$$</p>
+<p>当前控制还包含启动和层间 <code>start/done</code> 交接周期。各层串行执行，也没有让多张图片重叠进入流水线。因此，这个版本的目标首先是验证“用时间换面积”，而不是追求最高吞吐率。</p>
+<p>当前综合版本仍然采用固定模型：生成脚本把权重写进 <code>case(group_idx)</code> 和 <code>localparam</code>。它已经实现了PE时分复用，但还不是从BRAM动态读取、可以随时切换权重的通用神经网络加速器。</p>
+<h3 id="5-3-Vivado-结果"><a href="#5-3-Vivado-结果" class="headerlink" title="5.3 Vivado 结果"></a>5.3 Vivado 结果</h3><p>测试器件为 <strong>XC7A200T-2FBV484</strong>，Vivado 2018.1，时钟约束为100 MHz。由于顶层直接暴露784-bit图像输入，PPA分析采用OOC模式，只考察计算核心，不代表最终板级I&#x2F;O设计。</p>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>实现状态</th>
+<th align="right">LUT</th>
+<th align="right">FF</th>
+<th align="right">BRAM</th>
+<th align="right">DSP</th>
+<th>时序</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全展开</td>
+<td>布局完成，路由未完成</td>
+<td align="right">100,254</td>
+<td align="right">5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td>中间WNS -32.273 ns</td>
+</tr>
+<tr>
+<td>层间流水</td>
+<td>布局完成，路由未完成</td>
+<td align="right">85,270</td>
+<td align="right">199</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td>中间WNS -6.058 ns</td>
+</tr>
+<tr>
+<td>16-PE复用</td>
+<td><strong>完整路由</strong></td>
+<td align="right"><strong>23,368</strong></td>
+<td align="right"><strong>1,056</strong></td>
+<td align="right"><strong>0</strong></td>
+<td align="right"><strong>0</strong></td>
+<td>Routed WNS -4.720 ns</td>
+</tr>
+</tbody></table>
+<p>与全展开版相比，PE复用版的LUT减少约 <strong>76.7%</strong>。30,423条需要路由的网络全部完成路由，routing error为0。这说明PE复用确实解决了主要的资源密度和拥塞问题。</p>
+<p>但路由成功不等于100 MHz时序已经通过。当前最差路径约14.41 ns，其中约73%来自布线延迟。根据WNS粗略估算，当前频率上限约为：</p>
+<p>$$<br>f_{max}\approx\frac{1}{10\text{ ns}+4.720\text{ ns}}\approx67.9\text{ MHz}<br>$$</p>
+<p>功能验证方面，PE复用版已完成100张阶段性RTL回归，准确率为 <strong>97&#x2F;100</strong>，与Golden Reference <strong>100&#x2F;100一致</strong>。Testbench可以继续扩展到完整的1,000张导出测试集。</p>
+<h2 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h2><p>回到最开始的神经网络，它原本逐层执行点积、BN和激活；在二值条件下，这些运算可以依次变成XNOR、Popcount和整数阈值比较，输出层再直接对Popcount做Argmax。这个变换是由 <code>+1/-1</code> 编码和BN不等式严格推导出来的。</p>
+<p>全展开证明了算法能够直接映射成电路，PE复用最终解决了资源和路由问题。这个MNIST网络很小，单独部署没有明显实际价值，但同样的XNOR-Popcount PE可以继续用于更大的全连接层或二值卷积网络，这才是这种结构更有意义的应用方向。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/BNN/">BNN</a><a class="post-meta__tags" href="/tags/Verilog/">Verilog</a></div><div class="post-share"><div class="social-share" data-image="/img/columns/digital-ic.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/butterfly-extsrc/1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdnjs.cloudflare.com/ajax/libs/butterfly-extsrc/1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By yanghong7</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div><div class="footer_custom_text"><div class="footer-custom-text">Thinking will never teach you how to live.</div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索..." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>

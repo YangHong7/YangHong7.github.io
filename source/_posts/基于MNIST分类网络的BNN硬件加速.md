@@ -1,9 +1,9 @@
 ---
-title: 从二值神经网络到 PE 复用：一个 MNIST FPGA 加速器
-date: 2026-09-08
+title: 基于MNIST分类网络的BNN硬件加速
+date: 2026-09-06
 aside: false
 description: 。
-cover: /img/columns/digital-ic.jpg
+cover: /img/columns/bnn_mnist.jpg
 tags:
   - BNN
   - Verilog
